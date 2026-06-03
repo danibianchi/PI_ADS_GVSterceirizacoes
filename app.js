@@ -1267,6 +1267,16 @@ async function submitForm(event, endpoint, id = null) {
         data.valor_acordado = num;
     }
     
+    // Regra de Negócio (Matheus): Data Fim não pode ser menor que Data Início
+    if(data.data_inicio && data.data_fim) {
+        const d1 = new Date(data.data_inicio);
+        const d2 = new Date(data.data_fim);
+        if(d2 < d1) {
+            showAlert('A Data de Término não pode ser anterior à Data de Início.');
+            return;
+        }
+    }
+
     if(data.disponivel) data.disponivel = data.disponivel === 'true';
 
     if(endpoint === 'usuarios') {
