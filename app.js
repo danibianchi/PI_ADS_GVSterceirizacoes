@@ -1049,6 +1049,14 @@ window.editRecord = async function(id, type) {
                     <input type="text" name="valor_acordado" oninput="maskCurrency(this)" value="${valorMasked}" class="form-control" required placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
+                    <label>Data de Início</label>
+                    <input type="date" name="data_inicio" value="${record.data_inicio ? record.data_inicio.split('T')[0] : ''}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Data de Término</label>
+                    <input type="date" name="data_fim" value="${record.data_fim ? record.data_fim.split('T')[0] : ''}" class="form-control">
+                </div>
+                <div class="form-group">
                     <label>Status</label>
                     <select name="status" class="form-control" required>
                         <option value="ativo" ${record.status === 'ativo' ? 'selected' : ''}>Ativo</option>
@@ -1180,6 +1188,10 @@ btnNovo.addEventListener('click', async () => {
                 <div class="form-group">
                     <label>Data de Início</label>
                     <input type="date" name="data_inicio" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Data de Término</label>
+                    <input type="date" name="data_fim" class="form-control">
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Criar Contrato</button>
             </form>
