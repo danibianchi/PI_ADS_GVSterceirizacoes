@@ -1404,3 +1404,5 @@ window.logout = function() {
         window.location.href = 'login.html';
     });
 }
+
+// Nota Integracao: O populate no backend substitui IDs por objetos em contratos e OS
