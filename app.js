@@ -160,19 +160,34 @@ window.navigateTo = function(target) {
     renderRoute();
 }
 
-// Pesquisa
-searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase();
-    window.currentPage = 1; // Reseta paginação na pesquisa
-    if (!term) {
-        window.filteredDataList = [...window.currentDataList];
-    } else {
-        window.filteredDataList = window.currentDataList.filter(item => {
-            return Object.values(item).some(val => 
+// Pesquisa e Filtros
+window.applyFilters = function() {
+    const term = searchInput.value.toLowerCase();
+    const statusVal = document.getElementById('status-filter')?.value || 'todos';
+    
+    window.currentPage = 1;
+    
+    window.filteredDataList = window.currentDataList.filter(item => {
+        let matchesSearch = true;
+        if (term) {
+            matchesSearch = Object.values(item).some(val => 
                 val !== null && val !== undefined && val.toString().toLowerCase().includes(term)
             );
-        });
-    }
+        }
+        
+        let matchesStatus = true;
+        if (statusVal !== 'todos') {
+            let itemStatus = 'ativo';
+            if (item.status) {
+                if (item.status === 'inativo' || item.status === 'encerrado' || item.status === 'cancelado') itemStatus = 'inativo';
+            } else if (item.hasOwnProperty('disponivel')) {
+                itemStatus = item.disponivel ? 'ativo' : 'inativo';
+            }
+            matchesStatus = (itemStatus === statusVal);
+        }
+        
+        return matchesSearch && matchesStatus;
+    });
     
     if(currentRoute === 'clientes') renderClientes(false);
     else if(currentRoute === 'prestadores') renderPrestadores(false);
@@ -180,8 +195,7 @@ searchInput.addEventListener('input', (e) => {
     else if(currentRoute === 'ordens') renderOrdens(false);
     else if(currentRoute === 'historico') renderHistorico(false);
     else if(currentRoute === 'usuarios') renderUsuarios(false);
-    else if(currentRoute === 'usuarios') renderUsuarios(false);
-});
+};
 
 // Renderizador principal
 async function renderRoute() {
@@ -434,7 +448,10 @@ async function renderClientes(fetchData = true) {
                     <div style="display: flex; gap: 8px;">
                         <button class="btn-icon" title="Editar" onclick="editRecord('${c._id}', 'clientes')"><i class='bx bx-edit'></i></button>
                         <button class="btn-icon" title="${isAtivo ? 'Desativar' : 'Ativar'}" onclick="toggleStatus('${c._id}', 'clientes', '${c.status}')">
-                            <i class='bx ${isAtivo ? 'bx-block' : 'bx-check-circle'}' style="color: ${isAtivo ? 'var(--danger)' : 'var(--success)'};"></i>
+                            <i class='bx ${isAtivo ? 'bx-block' : 'bx-check-circle'}' style="color: ${isAtivo ? 'var(--warning)' : 'var(--success)'};"></i>
+                        </button>
+                        <button class="btn-icon" title="Excluir" onclick="deleteRecord('${c._id}', 'clientes')">
+                            <i class='bx bx-trash' style="color: var(--danger);"></i>
                         </button>
                     </div>
                 </td>
@@ -496,6 +513,9 @@ async function renderPrestadores(fetchData = true) {
                         <button class="btn-icon" title="Editar" onclick="editRecord('${p._id}', 'prestadores')"><i class='bx bx-edit'></i></button>
                         <button class="btn-icon" title="${p.disponivel ? 'Marcar Ocupado' : 'Marcar Disponível'}" onclick="toggleStatus('${p._id}', 'prestadores', '${p.disponivel}')">
                             <i class='bx ${p.disponivel ? 'bx-x-circle' : 'bx-check-circle'}' style="color: ${p.disponivel ? 'var(--danger)' : 'var(--success)'};"></i>
+                        </button>
+                        <button class="btn-icon" title="Excluir" onclick="deleteRecord('${p._id}', 'prestadores')">
+                            <i class='bx bx-trash' style="color: var(--danger);"></i>
                         </button>
                     </div>
                 </td>
@@ -560,6 +580,9 @@ async function renderContratos(fetchData = true) {
                         <button class="btn-icon" title="${isAtivo ? 'Encerrar' : 'Ativar'}" onclick="toggleStatus('${c._id}', 'contratos', '${c.status}')">
                             <i class='bx ${isAtivo ? 'bx-power-off' : 'bx-play-circle'}' style="color: ${isAtivo ? 'var(--warning)' : 'var(--success)'};"></i>
                         </button>
+                        <button class="btn-icon" title="Excluir" onclick="deleteRecord('${c._id}', 'contratos')">
+                            <i class='bx bx-trash' style="color: var(--danger);"></i>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -614,6 +637,9 @@ async function renderOrdens(fetchData = true) {
                         <button class="btn-icon" title="Editar" onclick="editRecord('${o._id}', 'ordens-servico')"><i class='bx bx-edit'></i></button>
                         <button class="btn-icon" title="${isConcluida ? 'Reabrir' : 'Concluir'}" onclick="toggleStatus('${o._id}', 'ordens-servico', '${o.status}')">
                             <i class='bx ${isConcluida ? 'bx-revision' : 'bx-check-double'}' style="color: ${isConcluida ? 'var(--text-secondary)' : 'var(--success)'};"></i>
+                        </button>
+                        <button class="btn-icon" title="Excluir" onclick="deleteRecord('${o._id}', 'ordens-servico')">
+                            <i class='bx bx-trash' style="color: var(--danger);"></i>
                         </button>
                     </div>
                 </td>
@@ -735,7 +761,10 @@ async function renderUsuarios(fetchData = true) {
                     <div style="display: flex; gap: 8px;">
                         <button class="btn-icon" title="Editar Senha" onclick="editRecord('${u._id}', 'usuarios')"><i class='bx bx-key'></i></button>
                         <button class="btn-icon" title="${isAtivo ? 'Desativar' : 'Ativar'}" onclick="toggleStatus('${u._id}', 'usuarios', '${u.status}')" ${u.username === 'admin' ? 'disabled style="opacity: 0.3;"' : ''}>
-                            <i class='bx ${isAtivo ? 'bx-block' : 'bx-check-circle'}' style="color: ${isAtivo && u.username !== 'admin' ? 'var(--danger)' : 'var(--success)'};"></i>
+                            <i class='bx ${isAtivo ? 'bx-block' : 'bx-check-circle'}' style="color: ${isAtivo && u.username !== 'admin' ? 'var(--warning)' : 'var(--success)'};"></i>
+                        </button>
+                        <button class="btn-icon" title="Excluir" onclick="deleteRecord('${u._id}', 'usuarios')" ${u.username === 'admin' ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+                            <i class='bx bx-trash' style="color: var(--danger);"></i>
                         </button>
                     </div>
                 </td>
@@ -797,6 +826,42 @@ window.toggleStatus = function(id, type, currentStatus) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ acao: 'atualizacao_status', entidade: entityName, documentoId: id, detalhes: updatedData })
+            }).catch(e => console.log('Erro ao salvar auditoria', e));
+
+            renderRoute();
+        } catch(err) {
+            showAlert(err.message);
+        }
+    });
+}
+
+// Ação Rápida: Excluir
+window.deleteRecord = function(id, type) {
+    showConfirm('Tem certeza que deseja excluir este registro permanentemente?', async () => {
+        try {
+            if(type === 'usuarios') {
+                let users = window.getSystemUsers();
+                if(users.find(x => x._id === id)?.username === 'admin') {
+                    showAlert('Não é possível excluir o administrador mestre.');
+                    return;
+                }
+                users = users.filter(x => x._id !== id);
+                localStorage.setItem('gvs_users', JSON.stringify(users));
+                renderRoute();
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/${type}/${id}`, {
+                method: 'DELETE'
+            });
+
+            if(!response.ok) throw new Error('Falha ao excluir registro');
+
+            const entityName = type === 'ordens-servico' ? 'OrdemServico' : type.charAt(0).toUpperCase() + type.slice(1);
+            await fetch(`${API_URL}/historico`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao: 'exclusao', entidade: entityName, documentoId: id, detalhes: {} })
             }).catch(e => console.log('Erro ao salvar auditoria', e));
 
             renderRoute();
@@ -1083,15 +1148,26 @@ async function submitForm(event, endpoint, id = null) {
     const data = Object.fromEntries(formData.entries());
 
     // Validação rigorosa de máscaras
-    if(data.cnpj && data.cnpj.length < 18) {
-        showAlert('Por favor, preencha o CNPJ completo.');
+    if(data.razao_social && !/[a-zA-ZÀ-ÿ]/.test(data.razao_social)) {
+        showAlert('A Razão Social ou Nome deve conter letras.');
         return;
     }
-    if(data.cpf_cnpj && data.cpf_cnpj.length < 14) {
-        showAlert('Por favor, preencha o CPF ou CNPJ completo.');
+    if(data.nome && !/[a-zA-ZÀ-ÿ]/.test(data.nome)) {
+        showAlert('O Nome deve conter letras.');
         return;
     }
-    if(data.telefone && data.telefone.length < 14) {
+    if(data.cnpj && data.cnpj.replace(/\\D/g, '').length !== 14) {
+        showAlert('Por favor, preencha o CNPJ completo com 14 dígitos válidos.');
+        return;
+    }
+    if(data.cpf_cnpj) {
+        const cLen = data.cpf_cnpj.replace(/\\D/g, '').length;
+        if(cLen !== 11 && cLen !== 14) {
+            showAlert('Por favor, preencha o CPF (11 dígitos) ou CNPJ (14 dígitos) completo.');
+            return;
+        }
+    }
+    if(data.telefone && data.telefone.replace(/\\D/g, '').length < 10) {
         showAlert('Por favor, preencha o Telefone completo com DDD.');
         return;
     }
