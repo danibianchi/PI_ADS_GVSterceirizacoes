@@ -931,6 +931,27 @@ window.deleteRecord = function(id, type) {
                 return;
             }
 
+            // Regra de Negócio (Kevin): Impedir exclusão se houver contrato vinculado
+            if (type === 'clientes' || type === 'prestadores') {
+                try {
+                    const resCont = await fetch(`${API_URL}/contratos`);
+                    const contratos = await resCont.json();
+                    
+                    const temContrato = contratos.some(c => {
+                        const cCliId = typeof c.clienteId === 'object' ? c.clienteId?._id : c.clienteId;
+                        const cPrestId = typeof c.prestadorId === 'object' ? c.prestadorId?._id : c.prestadorId;
+                        return cCliId === id || cPrestId === id;
+                    });
+
+                    if (temContrato) {
+                        showAlert('Acesso Negado: Este registro possui contratos vinculados e não pode ser excluído para manter a integridade do sistema.');
+                        return;
+                    }
+                } catch(e) {
+                    console.log('Erro ao checar contratos', e);
+                }
+            }
+
             const response = await fetch(`${API_URL}/${type}/${id}`, {
                 method: 'DELETE'
             });
@@ -1403,3 +1424,4 @@ window.logout = function() {
 
 // Nota Integracao: O populate no backend substitui IDs por objetos em contratos e OS
 // Nota UI: Tabelas renderizadas com scroll horizontal ativo em index.css
+// Nota: Input mask implementado no HTML via JS nativo
