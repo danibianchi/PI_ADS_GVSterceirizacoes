@@ -242,7 +242,7 @@ function getPaginationHtml(type) {
             <div style="display: flex; gap: 15px; align-items: center;">
                 <label style="display: flex; align-items: center; gap: 5px;">
                     Mostrar
-                    <select onchange="changeItemsPerPage(this, '${type}')" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--border-color); border-radius: 4px; padding: 3px; outline: none;">
+                    <select onchange="changeItemsPerPage(this, '${type}')" class="pagination-select">
                         <option value="5" ${window.itemsPerPage===5?'selected':''}>5</option>
                         <option value="10" ${window.itemsPerPage===10?'selected':''}>10</option>
                         <option value="25" ${window.itemsPerPage===25?'selected':''}>25</option>
