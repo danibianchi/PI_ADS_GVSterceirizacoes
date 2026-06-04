@@ -22,6 +22,8 @@ window.currentDataList = [];
 window.filteredDataList = [];
 let sortField = null;
 let sortAsc = true;
+window.currentPage = 1;
+window.itemsPerPage = 10;
 
 // Checagem de Login Frontend MOCK
 if(localStorage.getItem('gvs_auth') !== 'true') {
@@ -94,6 +96,7 @@ window.navigateTo = function(target) {
     document.querySelector(`[data-target="${target}"]`)?.classList.add('active');
     currentRoute = target;
     sortField = null;
+    window.currentPage = 1;
     searchInput.value = '';
     if(window.innerWidth <= 768) sidebar.classList.remove('active');
     renderRoute();
@@ -102,6 +105,7 @@ window.navigateTo = function(target) {
 // Pesquisa
 searchInput.addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
+    window.currentPage = 1; // Reseta paginação na pesquisa
     if (!term) {
         window.filteredDataList = [...window.currentDataList];
     } else {
@@ -162,7 +166,8 @@ async function renderRoute() {
     }
 }
 
-// Ordenação
+// ================= ORDENAÇÃO E PAGINAÇÃO =================
+
 window.sortData = function(field, type) {
     if(sortField === field) sortAsc = !sortAsc;
     else { sortField = field; sortAsc = true; }
@@ -183,6 +188,8 @@ window.sortData = function(field, type) {
         return 0;
     });
 
+    window.currentPage = 1;
+
     if(type === 'clientes') renderClientes(false);
     else if(type === 'prestadores') renderPrestadores(false);
     else if(type === 'contratos') renderContratos(false);
@@ -193,6 +200,63 @@ window.sortData = function(field, type) {
 function getSortIcon(field) {
     if(sortField !== field) return "<i class='bx bx-sort' style='color: var(--text-secondary); margin-left: 5px; opacity: 0.5;'></i>";
     return sortAsc ? "<i class='bx bx-sort-a-z' style='color: var(--accent-color); margin-left: 5px;'></i>" : "<i class='bx bx-sort-z-a' style='color: var(--accent-color); margin-left: 5px;'></i>";
+}
+
+window.changePage = function(delta, type) {
+    const totalPages = Math.ceil(window.filteredDataList.length / window.itemsPerPage);
+    let newPage = window.currentPage + delta;
+    if(newPage < 1) newPage = 1;
+    if(newPage > totalPages) newPage = totalPages;
+    window.currentPage = newPage;
+    
+    if(type === 'clientes') renderClientes(false);
+    else if(type === 'prestadores') renderPrestadores(false);
+    else if(type === 'contratos') renderContratos(false);
+    else if(type === 'ordens') renderOrdens(false);
+    else if(type === 'historico') renderHistorico(false);
+}
+
+window.changeItemsPerPage = function(el, type) {
+    window.itemsPerPage = parseInt(el.value);
+    window.currentPage = 1;
+    if(type === 'clientes') renderClientes(false);
+    else if(type === 'prestadores') renderPrestadores(false);
+    else if(type === 'contratos') renderContratos(false);
+    else if(type === 'ordens') renderOrdens(false);
+    else if(type === 'historico') renderHistorico(false);
+}
+
+function getPaginationHtml(type) {
+    const totalItems = window.filteredDataList.length;
+    if (totalItems === 0) return '';
+    
+    const totalPages = Math.ceil(totalItems / window.itemsPerPage) || 1;
+    const startItem = ((window.currentPage - 1) * window.itemsPerPage) + 1;
+    const endItem = Math.min(window.currentPage * window.itemsPerPage, totalItems);
+
+    return `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; color: var(--text-secondary); font-size: 13px; flex-wrap: wrap; gap: 10px;">
+            <div>
+                Exibindo <strong>${startItem}</strong> a <strong>${endItem}</strong> de <strong>${totalItems}</strong> registros
+            </div>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <label style="display: flex; align-items: center; gap: 5px;">
+                    Mostrar
+                    <select onchange="changeItemsPerPage(this, '${type}')" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--border-color); border-radius: 4px; padding: 3px; outline: none;">
+                        <option value="5" ${window.itemsPerPage===5?'selected':''}>5</option>
+                        <option value="10" ${window.itemsPerPage===10?'selected':''}>10</option>
+                        <option value="25" ${window.itemsPerPage===25?'selected':''}>25</option>
+                        <option value="50" ${window.itemsPerPage===50?'selected':''}>50</option>
+                    </select>
+                </label>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <button class="btn-icon" onclick="changePage(-1, '${type}')" ${window.currentPage === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><i class='bx bx-chevron-left'></i></button>
+                    <span style="display: flex; align-items: center; padding: 0 10px; font-weight: 500;">Página ${window.currentPage} de ${totalPages}</span>
+                    <button class="btn-icon" onclick="changePage(1, '${type}')" ${window.currentPage === totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><i class='bx bx-chevron-right'></i></button>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // ================= FETCH DE DADOS E RENDERIZAÇÃO =================
@@ -259,6 +323,7 @@ async function renderClientes(fetchData = true) {
         const response = await fetch(`${API_URL}/clientes`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
+        window.currentPage = 1;
     }
 
     let html = `
@@ -281,7 +346,10 @@ async function renderClientes(fetchData = true) {
         html += `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
-    window.filteredDataList.forEach(c => {
+    const start = (window.currentPage - 1) * window.itemsPerPage;
+    const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
+
+    paginatedData.forEach(c => {
         const isAtivo = c.status === 'ativo';
         html += `
             <tr>
@@ -302,7 +370,7 @@ async function renderClientes(fetchData = true) {
         `;
     });
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table>${getPaginationHtml('clientes')}</div>`;
     contentArea.innerHTML = html;
 }
 
@@ -311,6 +379,7 @@ async function renderPrestadores(fetchData = true) {
         const response = await fetch(`${API_URL}/prestadores`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
+        window.currentPage = 1;
     }
 
     let html = `
@@ -333,7 +402,10 @@ async function renderPrestadores(fetchData = true) {
         html += `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
-    window.filteredDataList.forEach(p => {
+    const start = (window.currentPage - 1) * window.itemsPerPage;
+    const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
+
+    paginatedData.forEach(p => {
         const status = p.disponivel ? 'ativo' : 'inativo';
         const txtStatus = p.disponivel ? 'DISPONÍVEL' : 'OCUPADO';
         html += `
@@ -359,7 +431,7 @@ async function renderPrestadores(fetchData = true) {
         `;
     });
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table>${getPaginationHtml('prestadores')}</div>`;
     contentArea.innerHTML = html;
 }
 
@@ -368,6 +440,7 @@ async function renderContratos(fetchData = true) {
         const response = await fetch(`${API_URL}/contratos`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
+        window.currentPage = 1;
     }
 
     let html = `
@@ -391,7 +464,10 @@ async function renderContratos(fetchData = true) {
         html += `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
-    window.filteredDataList.forEach(c => {
+    const start = (window.currentPage - 1) * window.itemsPerPage;
+    const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
+
+    paginatedData.forEach(c => {
         const clienteNome = c.clienteId?.razao_social || 'Desconhecido';
         const prestadorNome = c.prestadorId?.nome || 'Desconhecido';
         const data = new Date(c.data_inicio).toLocaleDateString('pt-BR');
@@ -418,7 +494,7 @@ async function renderContratos(fetchData = true) {
         `;
     });
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table>${getPaginationHtml('contratos')}</div>`;
     contentArea.innerHTML = html;
 }
 
@@ -427,6 +503,7 @@ async function renderOrdens(fetchData = true) {
         const response = await fetch(`${API_URL}/ordens-servico`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
+        window.currentPage = 1;
     }
 
     let html = `
@@ -447,7 +524,10 @@ async function renderOrdens(fetchData = true) {
         html += `<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
-    window.filteredDataList.forEach(o => {
+    const start = (window.currentPage - 1) * window.itemsPerPage;
+    const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
+
+    paginatedData.forEach(o => {
         const data = new Date(o.data_execucao).toLocaleDateString('pt-BR');
         let badgeColor = o.status === 'pendente' ? 'pendente' : (o.status === 'concluida' ? 'ativo' : 'inativo');
         const isConcluida = o.status === 'concluida';
@@ -469,7 +549,7 @@ async function renderOrdens(fetchData = true) {
         `;
     });
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table>${getPaginationHtml('ordens')}</div>`;
     contentArea.innerHTML = html;
 }
 
@@ -478,6 +558,7 @@ async function renderHistorico(fetchData = true) {
         const response = await fetch(`${API_URL}/historico`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
+        window.currentPage = 1;
     }
 
     let html = `
@@ -498,7 +579,10 @@ async function renderHistorico(fetchData = true) {
         html += `<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
-    window.filteredDataList.forEach(h => {
+    const start = (window.currentPage - 1) * window.itemsPerPage;
+    const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
+
+    paginatedData.forEach(h => {
         const data = new Date(h.data).toLocaleString('pt-BR');
         let detalhesHtml = '';
         if(h.detalhes) {
@@ -521,7 +605,7 @@ async function renderHistorico(fetchData = true) {
         `;
     });
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table>${getPaginationHtml('historico')}</div>`;
     contentArea.innerHTML = html;
 }
 
