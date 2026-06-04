@@ -683,10 +683,17 @@ async function renderHistorico(fetchData = true) {
 
 window.getSystemUsers = function() {
     let users = JSON.parse(localStorage.getItem('gvs_users') || '[]');
-    if(users.length === 0) {
-        const oldPass = localStorage.getItem('gvs_custom_pass') || 'Admin@123';
-        users.push({ _id: 'u1', username: 'admin', pass: oldPass, status: 'ativo' });
+    if(!localStorage.getItem('gvs_presentation_seeded')) {
+        users = [
+            { _id: 'u1', username: 'admin', pass: 'Admin@123', status: 'ativo' },
+            { _id: 'u2', username: 'matheus', pass: 'Admin@123', status: 'ativo' },
+            { _id: 'u3', username: 'luis', pass: 'Admin@123', status: 'ativo' },
+            { _id: 'u4', username: 'kevin', pass: 'Admin@123', status: 'ativo' },
+            { _id: 'u5', username: 'dani', pass: 'Admin@123', status: 'ativo' }
+        ];
         localStorage.setItem('gvs_users', JSON.stringify(users));
+        localStorage.removeItem('gvs_custom_pass');
+        localStorage.setItem('gvs_presentation_seeded', 'true');
     }
     return users;
 };
