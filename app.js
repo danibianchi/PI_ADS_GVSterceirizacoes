@@ -615,6 +615,21 @@ async function renderContratos(fetchData = true) {
     contentArea.innerHTML = html;
 }
 
+window.viewOrderDetails = function(id) {
+    const record = window.currentDataList.find(r => r._id === id);
+    if(!record) return;
+    
+    openModal('Detalhes da Ordem de Serviço', `
+        <div style="text-align: left;">
+            <p style="color: var(--text-secondary); margin-bottom: 5px; font-size: 13px;">Descrição da Atividade:</p>
+            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; color: var(--text-primary); font-size: 14px; min-height: 80px; margin-bottom: 20px;">
+                ${record.descricao ? record.descricao.replace(/\\n/g, '<br>') : 'Nenhuma descrição fornecida.'}
+            </div>
+            <button class="btn btn-primary" onclick="closeModal()" style="width: 100%; justify-content: center;">Voltar</button>
+        </div>
+    `);
+}
+
 async function renderOrdens(fetchData = true) {
     if(fetchData) {
         const response = await fetch(`${API_URL}/ordens-servico`);
@@ -628,7 +643,8 @@ async function renderOrdens(fetchData = true) {
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="cursor: pointer;" onclick="sortData('descricao', 'ordens')">Descrição ${getSortIcon('descricao')}</th>
+                    <th style="cursor: pointer;" onclick="sortData('solicitante', 'ordens')">Solicitante ${getSortIcon('solicitante')}</th>
+                    <th style="cursor: pointer;" onclick="sortData('executor', 'ordens')">Executor ${getSortIcon('executor')}</th>
                     <th style="cursor: pointer;" onclick="sortData('data_execucao', 'ordens')">Data Execução ${getSortIcon('data_execucao')}</th>
                     <th style="cursor: pointer;" onclick="sortData('status', 'ordens')">Status ${getSortIcon('status')}</th>
                     <th>Ações</th>
@@ -638,7 +654,7 @@ async function renderOrdens(fetchData = true) {
     `;
 
     if (window.filteredDataList.length === 0) {
-        html += `<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
+        html += `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
     const start = (window.currentPage - 1) * window.itemsPerPage;
@@ -651,11 +667,13 @@ async function renderOrdens(fetchData = true) {
         
         html += `
             <tr>
-                <td><strong>${o.descricao}</strong></td>
+                <td><strong>${o.solicitante || 'Não Informado'}</strong></td>
+                <td>${o.executor || 'Não Informado'}</td>
                 <td>${data}</td>
                 <td><span class="status-badge status-${badgeColor}">${o.status.toUpperCase()}</span></td>
                 <td>
                     <div style="display: flex; gap: 8px;">
+                        <button class="btn-icon" title="Ver Detalhes" onclick="viewOrderDetails('${o._id}')"><i class='bx bx-info-circle'></i></button>
                         <button class="btn-icon" title="Editar" onclick="editRecord('${o._id}', 'ordens-servico')"><i class='bx bx-edit'></i></button>
                         <button class="btn-icon" title="${isConcluida ? 'Reabrir' : 'Concluir'}" onclick="toggleStatus('${o._id}', 'ordens-servico', '${o.status}')">
                             <i class='bx ${isConcluida ? 'bx-revision' : 'bx-check-double'}' style="color: ${isConcluida ? 'var(--text-secondary)' : 'var(--success)'};"></i>
@@ -1010,6 +1028,14 @@ window.editRecord = async function(id, type) {
                     <select name="contratoId" class="form-control" required>${contOptions}</select>
                 </div>
                 <div class="form-group">
+                    <label>Solicitante</label>
+                    <input type="text" name="solicitante" value="${record.solicitante || ''}" class="form-control" required placeholder="Quem pediu o serviço?">
+                </div>
+                <div class="form-group">
+                    <label>Executor do Serviço</label>
+                    <input type="text" name="executor" value="${record.executor || ''}" class="form-control" required placeholder="Quem executou?">
+                </div>
+                <div class="form-group">
                     <label>Descrição da Atividade</label>
                     <textarea name="descricao" class="form-control" rows="4" style="resize: vertical;" required>${record.descricao}</textarea>
                 </div>
@@ -1133,6 +1159,14 @@ btnNovo.addEventListener('click', async () => {
                 <div class="form-group">
                     <label>Contrato Vinculado</label>
                     <select name="contratoId" class="form-control" required>${contOptions}</select>
+                </div>
+                <div class="form-group">
+                    <label>Solicitante</label>
+                    <input type="text" name="solicitante" class="form-control" required placeholder="Quem pediu o serviço?">
+                </div>
+                <div class="form-group">
+                    <label>Executor do Serviço</label>
+                    <input type="text" name="executor" class="form-control" required placeholder="Quem executou?">
                 </div>
                 <div class="form-group">
                     <label>Descrição da Atividade</label>
