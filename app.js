@@ -771,17 +771,13 @@ async function renderHistorico(fetchData = true) {
             if (detString) {
                 detalhesHtml = `<div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${detString}">Detalhes: ${detString}</div>`;
             }
-        }
 
         html += `
             <tr>
                 <td>${data}</td>
-                <td><span style="color: var(--accent-color); font-weight: bold;">${h.acao.toUpperCase()}</span></td>
-                <td>${h.entidade}</td>
-                <td>
-                    <code style="background: rgba(0,0,0,0.3); padding: 4px; border-radius: 4px;">${h.documentoId}</code>
-                    ${detalhesHtml}
-                </td>
+                <td><span class="status-badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.2);">${h.acao.toUpperCase()}</span></td>
+                <td><strong>${h.entidade.toUpperCase()}</strong></td>
+                <td style="font-family: monospace; font-size: 12px; color: var(--text-secondary); max-width: 300px; white-space: pre-wrap; overflow-wrap: break-word;">ID: ${h.documentoId}<br>${h.detalhes ? JSON.stringify(h.detalhes, null, 2) : '-'}</td>
             </tr>
         `;
     });
