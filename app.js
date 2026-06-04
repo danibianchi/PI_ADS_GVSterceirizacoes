@@ -334,7 +334,7 @@ async function renderClientes(fetchData = true) {
                     <th style="cursor: pointer;" onclick="sortData('razao_social', 'clientes')">Razão Social ${getSortIcon('razao_social')}</th>
                     <th style="cursor: pointer;" onclick="sortData('cnpj', 'clientes')">CNPJ ${getSortIcon('cnpj')}</th>
                     <th style="cursor: pointer;" onclick="sortData('email', 'clientes')">Email ${getSortIcon('email')}</th>
-                    <th style="cursor: pointer;" onclick="sortData('telefone', 'clientes')">Telefone ${getSortIcon('telefone')}</th>
+                    <th style="cursor: pointer; width: 180px;" onclick="sortData('telefone', 'clientes')">Telefone ${getSortIcon('telefone')}</th>
                     <th style="cursor: pointer;" onclick="sortData('status', 'clientes')">Status ${getSortIcon('status')}</th>
                     <th>Ações</th>
                 </tr>
@@ -356,7 +356,11 @@ async function renderClientes(fetchData = true) {
                 <td><strong>${c.razao_social}</strong></td>
                 <td>${c.cnpj}</td>
                 <td>${c.email}</td>
-                <td>${c.telefone}</td>
+                <td style="white-space: nowrap; width: 180px;">
+                    <a href="https://wa.me/55${c.telefone.replace(/\D/g, '')}" target="_blank" style="color: #25D366; text-decoration: none; display: flex; align-items: center; gap: 5px; font-weight: 500;" title="Abrir no WhatsApp">
+                        <i class='bx bxl-whatsapp' style="font-size: 18px;"></i> ${c.telefone}
+                    </a>
+                </td>
                 <td><span class="status-badge status-${c.status}">${c.status.toUpperCase()}</span></td>
                 <td>
                     <div style="display: flex; gap: 8px;">
