@@ -148,8 +148,12 @@ navItems.forEach(item => {
         navigateTo(target);
     });
 });
+window.routeHistory = [];
 
-window.navigateTo = function(target) {
+window.navigateTo = function(target, isBack = false) {
+    if(currentRoute && !isBack) {
+        window.routeHistory.push(currentRoute);
+    }
     navItems.forEach(nav => nav.classList.remove('active'));
     document.querySelector(`[data-target="${target}"]`)?.classList.add('active');
     currentRoute = target;
@@ -160,6 +164,14 @@ window.navigateTo = function(target) {
     renderRoute();
 }
 
+window.goBack = function() {
+    if(window.routeHistory && window.routeHistory.length > 0) {
+        const previousRoute = window.routeHistory.pop();
+        navigateTo(previousRoute, true);
+    } else {
+        navigateTo('dashboard', true);
+    }
+}
 // Pesquisa e Filtros
 window.applyFilters = function() {
     const term = searchInput.value.toLowerCase();
