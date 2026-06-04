@@ -498,9 +498,9 @@ async function renderPrestadores(fetchData = true) {
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="cursor: pointer;" onclick="sortData('nome', 'prestadores')">Nome ${getSortIcon('nome')}</th>
+                    <th style="cursor: pointer; max-width: 150px;" onclick="sortData('nome', 'prestadores')">Nome ${getSortIcon('nome')}</th>
                     <th style="cursor: pointer;" onclick="sortData('cpf_cnpj', 'prestadores')">CPF/CNPJ ${getSortIcon('cpf_cnpj')}</th>
-                    <th style="cursor: pointer; max-width: 150px;" onclick="sortData('especialidade', 'prestadores')">Especialidade ${getSortIcon('especialidade')}</th>
+                    <th style="cursor: pointer;" onclick="sortData('especialidade', 'prestadores')">Especialidade ${getSortIcon('especialidade')}</th>
                     <th style="cursor: pointer; width: 180px;" onclick="sortData('telefone', 'prestadores')">Telefone ${getSortIcon('telefone')}</th>
                     <th style="cursor: pointer;" onclick="sortData('disponivel', 'prestadores')">Status ${getSortIcon('disponivel')}</th>
                     <th>Ações</th>
@@ -521,9 +521,9 @@ async function renderPrestadores(fetchData = true) {
         const txtStatus = p.disponivel ? 'DISPONÍVEL' : 'OCUPADO';
         html += `
             <tr>
-                <td><strong>${p.nome}</strong></td>
+                <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.nome}"><strong>${p.nome}</strong></td>
                 <td>${p.cpf_cnpj}</td>
-                <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.especialidade}">${p.especialidade}</td>
+                <td>${p.especialidade}</td>
                 <td style="white-space: nowrap; width: 180px;">
                     <a href="https://wa.me/55${p.telefone.replace(/\D/g, '')}" target="_blank" style="color: #25D366; text-decoration: none; display: flex; align-items: center; gap: 5px; font-weight: 500;" title="Abrir no WhatsApp">
                         <i class='bx bxl-whatsapp' style="font-size: 18px;"></i> ${p.telefone}
