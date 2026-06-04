@@ -619,13 +619,38 @@ window.viewOrderDetails = function(id) {
     const record = window.currentDataList.find(r => r._id === id);
     if(!record) return;
     
+    const isConcluida = record.status === 'concluida';
+    
     openModal('Detalhes da Ordem de Serviço', `
         <div style="text-align: left;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 13px;">Ordem:</span><br>
+                    <strong style="color: var(--primary);">#OS-${record._id.substring(record._id.length - 4).toUpperCase()}</strong>
+                </div>
+                <div style="text-align: right;">
+                    <span style="color: var(--text-secondary); font-size: 13px;">Status:</span><br>
+                    <span class="status-badge status-${isConcluida ? 'ativo' : (record.status === 'pendente' ? 'pendente' : 'inativo')}">${record.status.toUpperCase()}</span>
+                </div>
+            </div>
+            
             <p style="color: var(--text-secondary); margin-bottom: 5px; font-size: 13px;">Descrição da Atividade:</p>
             <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; color: var(--text-primary); font-size: 14px; min-height: 80px; margin-bottom: 20px;">
                 ${record.descricao ? record.descricao.replace(/\\n/g, '<br>') : 'Nenhuma descrição fornecida.'}
             </div>
-            <button class="btn btn-primary" onclick="closeModal()" style="width: 100%; justify-content: center;">Voltar</button>
+            
+            <p style="color: var(--text-secondary); margin-bottom: 10px; font-size: 13px; text-align: center;">Ações Rápidas</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center;">
+                <button class="btn-icon" title="Editar" onclick="closeModal(); setTimeout(() => editRecord('${record._id}', 'ordens-servico'), 300)" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;"><i class='bx bx-edit' style="font-size: 20px;"></i></button>
+                <button class="btn-icon" title="${isConcluida ? 'Reabrir' : 'Concluir'}" onclick="closeModal(); setTimeout(() => toggleStatus('${record._id}', 'ordens-servico', '${record.status}'), 300)" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                    <i class='bx ${isConcluida ? 'bx-revision' : 'bx-check-double'}' style="color: ${isConcluida ? 'var(--text-secondary)' : 'var(--success)'}; font-size: 20px;"></i>
+                </button>
+                <button class="btn-icon" title="Excluir" onclick="closeModal(); setTimeout(() => deleteRecord('${record._id}', 'ordens-servico'), 300)" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                    <i class='bx bx-trash' style="color: var(--danger); font-size: 20px;"></i>
+                </button>
+            </div>
+            
+            <button class="btn btn-primary" onclick="closeModal()" style="width: 100%; justify-content: center; background: transparent; border-color: var(--border-color); color: var(--text-primary);">Voltar para Tabela</button>
         </div>
     `);
 }
@@ -659,6 +684,7 @@ async function renderOrdens(fetchData = true) {
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>Nº</th>
                     <th style="cursor: pointer;" onclick="sortData('solicitante', 'ordens')">Solicitante ${getSortIcon('solicitante')}</th>
                     <th style="cursor: pointer;" onclick="sortData('executor', 'ordens')">Executor ${getSortIcon('executor')}</th>
                     <th style="cursor: pointer;" onclick="sortData('data_execucao', 'ordens')">Data Execução ${getSortIcon('data_execucao')}</th>
@@ -670,7 +696,7 @@ async function renderOrdens(fetchData = true) {
     `;
 
     if (window.filteredDataList.length === 0) {
-        html += `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
+        html += `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
     const start = (window.currentPage - 1) * window.itemsPerPage;
@@ -683,6 +709,7 @@ async function renderOrdens(fetchData = true) {
         
         html += `
             <tr>
+                <td><strong style="color: var(--primary);">#OS-${o._id.substring(o._id.length - 4).toUpperCase()}</strong></td>
                 <td><strong>${o.solicitante || 'Não Informado'}</strong></td>
                 <td>${o.executor || 'Não Informado'}</td>
                 <td>${data}</td>
