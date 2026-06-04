@@ -1,5 +1,15 @@
 const API_URL = 'https://gvs-api.onrender.com/api';
 
+// Função de Hash SHA-256 (Web Crypto API)
+async function hashPassword(message) {
+    const msgUint8 = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+const ADMIN_HASH = 'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7';
+
 window.showAlert = function(msg) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -719,15 +729,16 @@ async function renderHistorico(fetchData = true) {
     contentArea.innerHTML = html;
 }
 
+
 window.getSystemUsers = function() {
     let users = JSON.parse(localStorage.getItem('gvs_users') || '[]');
     if(!localStorage.getItem('gvs_presentation_seeded')) {
         users = [
-            { _id: 'u1', username: 'admin', pass: 'Admin@123', status: 'ativo' },
-            { _id: 'u2', username: 'matheus', pass: 'Admin@123', status: 'ativo' },
-            { _id: 'u3', username: 'luis', pass: 'Admin@123', status: 'ativo' },
-            { _id: 'u4', username: 'kevin', pass: 'Admin@123', status: 'ativo' },
-            { _id: 'u5', username: 'dani', pass: 'Admin@123', status: 'ativo' }
+            { _id: 'u1', username: 'admin', pass: ADMIN_HASH, status: 'ativo' },
+            { _id: 'u2', username: 'matheus', pass: ADMIN_HASH, status: 'ativo' },
+            { _id: 'u3', username: 'luis', pass: ADMIN_HASH, status: 'ativo' },
+            { _id: 'u4', username: 'kevin', pass: ADMIN_HASH, status: 'ativo' },
+            { _id: 'u5', username: 'dani', pass: ADMIN_HASH, status: 'ativo' }
         ];
         localStorage.setItem('gvs_users', JSON.stringify(users));
         localStorage.removeItem('gvs_custom_pass');
@@ -1196,7 +1207,7 @@ async function submitForm(event, endpoint, id = null) {
         let users = window.getSystemUsers();
         if(id) {
             let u = users.find(x => x._id === id);
-            if(u) u.pass = data.pass;
+            if(u) u.pass = await hashPassword(data.pass);
         } else {
             if(users.find(u => u.username === data.username)) {
                 showAlert('Este nome de usuário já existe!');
@@ -1205,7 +1216,7 @@ async function submitForm(event, endpoint, id = null) {
             users.push({
                 _id: 'u' + Date.now(),
                 username: data.username,
-                pass: data.pass,
+                pass: await hashPassword(data.pass),
                 status: 'ativo'
             });
         }
