@@ -10,6 +10,33 @@ window.showAlert = function(msg) {
     document.body.appendChild(overlay);
 };
 
+window.showConfirm = function(msg, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px);';
+    const box = document.createElement('div');
+    box.style.cssText = 'background: var(--bg-sidebar, #0f172a); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); padding: 25px; border-radius: 12px; color: white; min-width: 300px; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: "Inter", sans-serif;';
+    
+    box.innerHTML = `
+        <p style="margin-bottom: 20px; font-size: 15px; line-height: 1.5;">${msg}</p>
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-cancel" style="flex: 1; background: transparent; border: 1px solid var(--text-secondary); color: var(--text-primary); padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">Cancelar</button>
+            <button id="btn-confirm" style="flex: 1; background: var(--accent-color, #3b82f6); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Confirmar</button>
+        </div>
+    `;
+    
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    box.querySelector('#btn-cancel').onclick = () => {
+        overlay.remove();
+    };
+
+    box.querySelector('#btn-confirm').onclick = () => {
+        overlay.remove();
+        onConfirm();
+    };
+};
+
 // Elementos da UI
 const navItems = document.querySelectorAll('.nav-item');
 const contentArea = document.getElementById('content-area');
@@ -710,45 +737,45 @@ function openModal(title, formHTML) {
 }
 
 // Ação Rápida: Ativar/Desativar
-window.toggleStatus = async function(id, type, currentStatus) {
-    if(!confirm('Deseja alterar o status deste registro?')) return;
-
-    let updatedData = {};
-    if(type === 'clientes') updatedData = { status: currentStatus === 'ativo' ? 'inativo' : 'ativo' };
-    else if(type === 'prestadores') updatedData = { disponivel: currentStatus === 'true' ? false : true };
-    else if(type === 'contratos') updatedData = { status: currentStatus === 'ativo' ? 'encerrado' : 'ativo' };
-    else if(type === 'ordens-servico') updatedData = { status: currentStatus === 'concluida' ? 'pendente' : 'concluida' };
-    else if(type === 'usuarios') {
-        let users = window.getSystemUsers();
-        let u = users.find(x => x._id === id);
-        if(u) {
-            u.status = currentStatus === 'ativo' ? 'inativo' : 'ativo';
-            localStorage.setItem('gvs_users', JSON.stringify(users));
-            renderRoute();
-            return;
+window.toggleStatus = function(id, type, currentStatus) {
+    showConfirm('Deseja alterar o status deste registro?', async () => {
+        let updatedData = {};
+        if(type === 'clientes') updatedData = { status: currentStatus === 'ativo' ? 'inativo' : 'ativo' };
+        else if(type === 'prestadores') updatedData = { disponivel: currentStatus === 'true' ? false : true };
+        else if(type === 'contratos') updatedData = { status: currentStatus === 'ativo' ? 'encerrado' : 'ativo' };
+        else if(type === 'ordens-servico') updatedData = { status: currentStatus === 'concluida' ? 'pendente' : 'concluida' };
+        else if(type === 'usuarios') {
+            let users = window.getSystemUsers();
+            let u = users.find(x => x._id === id);
+            if(u) {
+                u.status = currentStatus === 'ativo' ? 'inativo' : 'ativo';
+                localStorage.setItem('gvs_users', JSON.stringify(users));
+                renderRoute();
+                return;
+            }
         }
-    }
 
-    try {
-        const response = await fetch(`${API_URL}/${type}/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedData)
-        });
+        try {
+            const response = await fetch(`${API_URL}/${type}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
 
-        if(!response.ok) throw new Error('Falha ao alterar status');
+            if(!response.ok) throw new Error('Falha ao alterar status');
 
-        const entityName = type === 'ordens-servico' ? 'OrdemServico' : type.charAt(0).toUpperCase() + type.slice(1);
-        await fetch(`${API_URL}/historico`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ acao: 'atualizacao_status', entidade: entityName, documentoId: id, detalhes: updatedData })
-        }).catch(e => console.log('Erro ao salvar auditoria', e));
+            const entityName = type === 'ordens-servico' ? 'OrdemServico' : type.charAt(0).toUpperCase() + type.slice(1);
+            await fetch(`${API_URL}/historico`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao: 'atualizacao_status', entidade: entityName, documentoId: id, detalhes: updatedData })
+            }).catch(e => console.log('Erro ao salvar auditoria', e));
 
-        renderRoute();
-    } catch(err) {
-        showAlert(err.message);
-    }
+            renderRoute();
+        } catch(err) {
+            showAlert(err.message);
+        }
+    });
 }
 
 // Global para abrir formulário de edição
@@ -1139,8 +1166,8 @@ window.openConfigModal = function() {
 
 window.logout = function() {
     document.getElementById('user-dropdown').classList.remove('active');
-    if(confirm('Tem certeza que deseja sair do painel de administração?')) {
+    showConfirm('Tem certeza que deseja sair do painel de administração?', () => {
         localStorage.removeItem('gvs_auth');
         window.location.href = 'login.html';
-    }
+    });
 }
