@@ -634,6 +634,22 @@ async function renderOrdens(fetchData = true) {
     if(fetchData) {
         const response = await fetch(`${API_URL}/ordens-servico`);
         window.currentDataList = await response.json();
+        
+        const resCont = await fetch(`${API_URL}/contratos`);
+        const contratos = await resCont.json();
+        
+        window.currentDataList.forEach(o => {
+            const cId = typeof o.contratoId === 'object' ? o.contratoId?._id : o.contratoId;
+            const contrato = contratos.find(c => c._id === cId);
+            if (contrato) {
+                o.solicitante = contrato.clienteId?.razao_social || 'Desconhecido';
+                o.executor = contrato.prestadorId?.nome || 'Desconhecido';
+            } else {
+                o.solicitante = 'Desconhecido';
+                o.executor = 'Desconhecido';
+            }
+        });
+        
         window.filteredDataList = [...window.currentDataList];
         window.currentPage = 1;
     }
@@ -1028,14 +1044,6 @@ window.editRecord = async function(id, type) {
                     <select name="contratoId" class="form-control" required>${contOptions}</select>
                 </div>
                 <div class="form-group">
-                    <label>Solicitante</label>
-                    <input type="text" name="solicitante" value="${record.solicitante || ''}" class="form-control" required placeholder="Quem pediu o serviço?">
-                </div>
-                <div class="form-group">
-                    <label>Executor do Serviço</label>
-                    <input type="text" name="executor" value="${record.executor || ''}" class="form-control" required placeholder="Quem executou?">
-                </div>
-                <div class="form-group">
                     <label>Descrição da Atividade</label>
                     <textarea name="descricao" class="form-control" rows="4" style="resize: vertical;" required>${record.descricao}</textarea>
                 </div>
@@ -1159,14 +1167,6 @@ btnNovo.addEventListener('click', async () => {
                 <div class="form-group">
                     <label>Contrato Vinculado</label>
                     <select name="contratoId" class="form-control" required>${contOptions}</select>
-                </div>
-                <div class="form-group">
-                    <label>Solicitante</label>
-                    <input type="text" name="solicitante" class="form-control" required placeholder="Quem pediu o serviço?">
-                </div>
-                <div class="form-group">
-                    <label>Executor do Serviço</label>
-                    <input type="text" name="executor" class="form-control" required placeholder="Quem executou?">
                 </div>
                 <div class="form-group">
                     <label>Descrição da Atividade</label>
