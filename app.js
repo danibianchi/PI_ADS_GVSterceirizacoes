@@ -1198,7 +1198,12 @@ async function submitForm(event, endpoint, id = null) {
     // Remove máscara de dinheiro antes de mandar pro banco
     if(data.valor_acordado) {
         let valStr = data.valor_acordado.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
-        data.valor_acordado = parseFloat(valStr);
+        let num = parseFloat(valStr);
+        if(isNaN(num) || num <= 0) {
+            showAlert('Por favor, insira um valor monetário válido e maior que zero.');
+            return;
+        }
+        data.valor_acordado = num;
     }
     
     if(data.disponivel) data.disponivel = data.disponivel === 'true';
@@ -1241,6 +1246,10 @@ async function submitForm(event, endpoint, id = null) {
         });
 
         const savedData = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(savedData.message || savedData.error || 'Erro ao comunicar com o servidor.');
+        }
 
         // Salvar na auditoria com Detalhes
         const entityName = endpoint === 'ordens-servico' ? 'OrdemServico' : endpoint.charAt(0).toUpperCase() + endpoint.slice(1);
