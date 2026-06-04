@@ -1388,3 +1388,5 @@ window.logout = function() {
         window.location.href = 'login.html';
     });
 }
+
+// Nota UI: Tabelas renderizadas com scroll horizontal ativo em index.css
