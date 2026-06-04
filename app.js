@@ -1082,6 +1082,20 @@ async function submitForm(event, endpoint, id = null) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
+    // Validação rigorosa de máscaras
+    if(data.cnpj && data.cnpj.length < 18) {
+        showAlert('Por favor, preencha o CNPJ completo.');
+        return;
+    }
+    if(data.cpf_cnpj && data.cpf_cnpj.length < 14) {
+        showAlert('Por favor, preencha o CPF ou CNPJ completo.');
+        return;
+    }
+    if(data.telefone && data.telefone.length < 14) {
+        showAlert('Por favor, preencha o Telefone completo com DDD.');
+        return;
+    }
+
     // Remove máscara de dinheiro antes de mandar pro banco
     if(data.valor_acordado) {
         let valStr = data.valor_acordado.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
