@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import clientRoutes from './routes/client.routes';
+import { errorHandler } from './middlewares/error-handler';
 
 const app = express();
 
@@ -14,5 +15,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/clientes', clientRoutes);
+
+app.use(errorHandler);
 
 export default app;

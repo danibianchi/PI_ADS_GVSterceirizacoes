@@ -1,62 +1,30 @@
 import { Request, Response } from 'express';
 import * as ClientService from '../services/client.service';
+import { createClientSchema, updateClientSchema } from '../schemas/client.schema';
 
 export const getAll = async (req: Request, res: Response) => {
-  try {
-    const clients = await ClientService.getAllClients();
-    res.json(clients);
-  } catch (error) {
-    res.status(500).json({ erro: 'Erro ao buscar clientes' });
-  }
+  const clients = await ClientService.getAllClients();
+  res.json(clients);
 };
 
 export const getById = async (req: Request, res: Response) => {
-  try {
-    const client = await ClientService.getClientById(req.params.id);
-
-    if (!client) {
-      return res.status(404).json({ erro: 'Cliente não encontrado' });
-    }
-
-    res.json(client);
-  } catch (error) {
-    res.status(500).json({ erro: 'Erro ao buscar cliente' });
-  }
+  const client = await ClientService.getClientById(req.params.id as string);
+  res.json(client);
 };
 
 export const create = async (req: Request, res: Response) => {
-  try {
-    const client = await ClientService.createClient(req.body);
-    res.status(201).json(client);
-  } catch (error) {
-    res.status(400).json({ erro: 'Erro ao criar cliente' });
-  }
+  const validatedData = createClientSchema.parse(req.body);
+  const client = await ClientService.createClient(validatedData);
+  res.status(201).json(client);
 };
 
 export const update = async (req: Request, res: Response) => {
-  try {
-    const client = await ClientService.updateClient(req.params.id, req.body);
-
-    if (!client) {
-      return res.status(404).json({ erro: 'Cliente não encontrado' });
-    }
-
-    res.json(client);
-  } catch (error) {
-    res.status(400).json({ erro: 'Erro ao atualizar cliente' });
-  }
+  const validatedData = updateClientSchema.parse(req.body);
+  const client = await ClientService.updateClient(req.params.id as string, validatedData);
+  res.json(client);
 };
 
 export const remove = async (req: Request, res: Response) => {
-  try {
-    const client = await ClientService.deleteClient(req.params.id);
-
-    if (!client) {
-      return res.status(404).json({ erro: 'Cliente não encontrado' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ erro: 'Erro ao deletar cliente' });
-  }
+  await ClientService.deleteClient(req.params.id as string);
+  res.status(204).send();
 };
