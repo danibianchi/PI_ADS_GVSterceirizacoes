@@ -2,39 +2,60 @@ const API_URL = 'https://gvs-api.onrender.com/api';
 
 window.showAlert = function(msg) {
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px);';
+    overlay.className = 'modal-overlay';
+    
     const box = document.createElement('div');
-    box.style.cssText = 'background: var(--bg-sidebar, #0f172a); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); padding: 25px; border-radius: 12px; color: white; min-width: 300px; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: "Inter", sans-serif;';
-    box.innerHTML = `<p style="margin-bottom: 20px; font-size: 15px; line-height: 1.5;">${msg}</p><button onclick="this.parentElement.parentElement.remove()" style="background: var(--accent-color, #3b82f6); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">OK</button>`;
+    box.className = 'glass-panel modal-content';
+    box.style.textAlign = 'center';
+    
+    box.innerHTML = `
+        <p style="margin-bottom: 24px; font-size: 16px; line-height: 1.5; color: var(--text-primary);">${msg}</p>
+        <button class="btn btn-primary" onclick="
+            const ov = this.closest('.modal-overlay');
+            ov.classList.remove('active');
+            setTimeout(() => ov.remove(), 300);
+        " style="width: 100%; justify-content: center;">OK</button>
+    `;
+    
     overlay.appendChild(box);
     document.body.appendChild(overlay);
+    
+    setTimeout(() => overlay.classList.add('active'), 10);
 };
 
 window.showConfirm = function(msg, onConfirm) {
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px);';
+    overlay.className = 'modal-overlay';
+    
     const box = document.createElement('div');
-    box.style.cssText = 'background: var(--bg-sidebar, #0f172a); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); padding: 25px; border-radius: 12px; color: white; min-width: 300px; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: "Inter", sans-serif;';
+    box.className = 'glass-panel modal-content';
+    box.style.textAlign = 'center';
     
     box.innerHTML = `
-        <p style="margin-bottom: 20px; font-size: 15px; line-height: 1.5;">${msg}</p>
-        <div style="display: flex; gap: 10px;">
-            <button id="btn-cancel" style="flex: 1; background: transparent; border: 1px solid var(--text-secondary); color: var(--text-primary); padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">Cancelar</button>
-            <button id="btn-confirm" style="flex: 1; background: var(--accent-color, #3b82f6); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Confirmar</button>
+        <p style="margin-bottom: 24px; font-size: 16px; line-height: 1.5; color: var(--text-primary);">${msg}</p>
+        <div style="display: flex; gap: 16px;">
+            <button id="btn-cancel" class="btn" style="flex: 1; justify-content: center; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);">Cancelar</button>
+            <button id="btn-confirm" class="btn btn-primary" style="flex: 1; justify-content: center;">Confirmar</button>
         </div>
     `;
     
     overlay.appendChild(box);
     document.body.appendChild(overlay);
 
-    box.querySelector('#btn-cancel').onclick = () => {
-        overlay.remove();
+    const cancelFn = () => {
+        overlay.classList.remove('active');
+        setTimeout(() => overlay.remove(), 300);
     };
 
+    box.querySelector('#btn-cancel').onclick = cancelFn;
+
     box.querySelector('#btn-confirm').onclick = () => {
-        overlay.remove();
-        onConfirm();
+        cancelFn();
+        // Wait for animation to finish before firing confirm action if needed, or just fire immediately
+        setTimeout(onConfirm, 100);
     };
+    
+    setTimeout(() => overlay.classList.add('active'), 10);
 };
 
 // Elementos da UI
