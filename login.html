@@ -147,7 +147,13 @@
             const newPass = document.getElementById('new-password').value;
             
             if(newPass === 'Admin@123') {
-                alert('A nova senha não pode ser igual à senha inicial padrão.');
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px);';
+                const box = document.createElement('div');
+                box.style.cssText = 'background: #0f172a; border: 1px solid rgba(255,255,255,0.1); padding: 25px; border-radius: 12px; color: white; min-width: 300px; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: "Inter", sans-serif;';
+                box.innerHTML = `<p style="margin-bottom: 20px; font-size: 15px; line-height: 1.5;">A nova senha não pode ser igual à senha inicial padrão.</p><button onclick="this.parentElement.parentElement.remove()" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">OK</button>`;
+                overlay.appendChild(box);
+                document.body.appendChild(overlay);
                 return;
             }
             

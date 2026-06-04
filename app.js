@@ -1,5 +1,15 @@
 const API_URL = 'https://gvs-api.onrender.com/api';
 
+window.showAlert = function(msg) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px);';
+    const box = document.createElement('div');
+    box.style.cssText = 'background: var(--bg-sidebar, #0f172a); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); padding: 25px; border-radius: 12px; color: white; min-width: 300px; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-family: "Inter", sans-serif;';
+    box.innerHTML = `<p style="margin-bottom: 20px; font-size: 15px; line-height: 1.5;">${msg}</p><button onclick="this.parentElement.parentElement.remove()" style="background: var(--accent-color, #3b82f6); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">OK</button>`;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+};
+
 // Elementos da UI
 const navItems = document.querySelectorAll('.nav-item');
 const contentArea = document.getElementById('content-area');
@@ -737,7 +747,7 @@ window.toggleStatus = async function(id, type, currentStatus) {
 
         renderRoute();
     } catch(err) {
-        alert(err.message);
+        showAlert(err.message);
     }
 }
 
@@ -1032,7 +1042,7 @@ async function submitForm(event, endpoint, id = null) {
             if(u) u.pass = data.pass;
         } else {
             if(users.find(u => u.username === data.username)) {
-                alert('Este nome de usuário já existe!');
+                showAlert('Este nome de usuário já existe!');
                 return;
             }
             users.push({
@@ -1083,7 +1093,7 @@ async function submitForm(event, endpoint, id = null) {
         closeModal();
         renderRoute(); 
     } catch (error) {
-        alert(error.message);
+        showAlert(error.message);
         form.querySelector('button').disabled = false;
         form.querySelector('button').textContent = 'Tentar Novamente';
     }
@@ -1118,11 +1128,11 @@ window.openConfigModal = function() {
         const p1 = document.getElementById('cfg-new-pass').value;
         const p2 = document.getElementById('cfg-confirm-pass').value;
         if(p1 !== p2) {
-            alert('As senhas não coincidem!');
+            showAlert('As senhas não coincidem!');
             return;
         }
         localStorage.setItem('gvs_custom_pass', p1);
-        alert('✅ Senha atualizada com sucesso no banco de dados!');
+        showAlert('✅ Senha atualizada com sucesso no banco de dados!');
         closeModal();
     });
 }
