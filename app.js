@@ -121,6 +121,8 @@ searchInput.addEventListener('input', (e) => {
     else if(currentRoute === 'contratos') renderContratos(false);
     else if(currentRoute === 'ordens') renderOrdens(false);
     else if(currentRoute === 'historico') renderHistorico(false);
+    else if(currentRoute === 'usuarios') renderUsuarios(false);
+    else if(currentRoute === 'usuarios') renderUsuarios(false);
 });
 
 // Renderizador principal
@@ -160,6 +162,11 @@ async function renderRoute() {
                 pageTitle.textContent = 'Auditoria do Sistema';
                 await renderHistorico();
                 break;
+            case 'usuarios':
+                pageTitle.textContent = 'Usuários do Sistema';
+                btnNovo.style.display = 'inline-flex';
+                await renderUsuarios();
+                break;
         }
     } catch (error) {
         contentArea.innerHTML = `<p style="color: var(--danger)">Erro ao carregar os dados: ${error.message}</p>`;
@@ -195,6 +202,7 @@ window.sortData = function(field, type) {
     else if(type === 'contratos') renderContratos(false);
     else if(type === 'ordens') renderOrdens(false);
     else if(type === 'historico') renderHistorico(false);
+    else if(type === 'usuarios') renderUsuarios(false);
 }
 
 function getSortIcon(field) {
@@ -214,6 +222,7 @@ window.changePage = function(delta, type) {
     else if(type === 'contratos') renderContratos(false);
     else if(type === 'ordens') renderOrdens(false);
     else if(type === 'historico') renderHistorico(false);
+    else if(type === 'usuarios') renderUsuarios(false);
 }
 
 window.changeItemsPerPage = function(el, type) {
@@ -224,6 +233,7 @@ window.changeItemsPerPage = function(el, type) {
     else if(type === 'contratos') renderContratos(false);
     else if(type === 'ordens') renderOrdens(false);
     else if(type === 'historico') renderHistorico(false);
+    else if(type === 'usuarios') renderUsuarios(false);
 }
 
 function getPaginationHtml(type) {
@@ -613,6 +623,65 @@ async function renderHistorico(fetchData = true) {
     contentArea.innerHTML = html;
 }
 
+window.getSystemUsers = function() {
+    let users = JSON.parse(localStorage.getItem('gvs_users') || '[]');
+    if(users.length === 0) {
+        const oldPass = localStorage.getItem('gvs_custom_pass') || 'Admin@123';
+        users.push({ _id: 'u1', username: 'admin', pass: oldPass, status: 'ativo' });
+        localStorage.setItem('gvs_users', JSON.stringify(users));
+    }
+    return users;
+};
+
+async function renderUsuarios(fetchData = true) {
+    if(fetchData) {
+        window.currentDataList = window.getSystemUsers();
+        window.filteredDataList = [...window.currentDataList];
+        window.currentPage = 1;
+    }
+
+    let html = `
+    <div class="glass-panel data-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="cursor: pointer;" onclick="sortData('username', 'usuarios')">Usuário ${getSortIcon('username')}</th>
+                    <th style="cursor: pointer;" onclick="sortData('status', 'usuarios')">Status ${getSortIcon('status')}</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (window.filteredDataList.length === 0) {
+        html += `<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
+    }
+
+    const start = (window.currentPage - 1) * window.itemsPerPage;
+    const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
+
+    paginatedData.forEach(u => {
+        const isAtivo = u.status === 'ativo';
+        html += `
+            <tr>
+                <td><strong>${u.username}</strong></td>
+                <td><span class="status-badge status-${u.status}">${u.status.toUpperCase()}</span></td>
+                <td>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-icon" title="Editar Senha" onclick="editRecord('${u._id}', 'usuarios')"><i class='bx bx-key'></i></button>
+                        <button class="btn-icon" title="${isAtivo ? 'Desativar' : 'Ativar'}" onclick="toggleStatus('${u._id}', 'usuarios', '${u.status}')" ${u.username === 'admin' ? 'disabled style="opacity: 0.3;"' : ''}>
+                            <i class='bx ${isAtivo ? 'bx-block' : 'bx-check-circle'}' style="color: ${isAtivo && u.username !== 'admin' ? 'var(--danger)' : 'var(--success)'};"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table>${getPaginationHtml('usuarios')}</div>`;
+    contentArea.innerHTML = html;
+}
+
 // Inicia a aplicação carregando o Dashboard
 renderRoute();
 
@@ -639,6 +708,16 @@ window.toggleStatus = async function(id, type, currentStatus) {
     else if(type === 'prestadores') updatedData = { disponivel: currentStatus === 'true' ? false : true };
     else if(type === 'contratos') updatedData = { status: currentStatus === 'ativo' ? 'encerrado' : 'ativo' };
     else if(type === 'ordens-servico') updatedData = { status: currentStatus === 'concluida' ? 'pendente' : 'concluida' };
+    else if(type === 'usuarios') {
+        let users = window.getSystemUsers();
+        let u = users.find(x => x._id === id);
+        if(u) {
+            u.status = currentStatus === 'ativo' ? 'inativo' : 'ativo';
+            localStorage.setItem('gvs_users', JSON.stringify(users));
+            renderRoute();
+            return;
+        }
+    }
 
     try {
         const response = await fetch(`${API_URL}/${type}/${id}`, {
@@ -793,6 +872,21 @@ window.editRecord = async function(id, type) {
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Ordem</button>
             </form>
         `);
+    } else if (type === 'usuarios') {
+        openModal('Alterar Senha do Usuário', `
+            <form id="form-novo" onsubmit="submitForm(event, 'usuarios', '${id}')">
+                <div class="form-group" style="text-align: left;">
+                    <label>Nova Senha para ${record.username}</label>
+                    <input type="password" name="pass" class="form-control" required 
+                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
+                           title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); text-align: left; margin-bottom: 15px;">
+                    Requisitos: Mín. 8 caracteres, 1 Maiúscula, 1 Número, 1 Caractere Especial (!@#$)
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Senha</button>
+            </form>
+        `);
     }
 };
 
@@ -898,6 +992,22 @@ btnNovo.addEventListener('click', async () => {
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Registrar Ordem</button>
             </form>
         `);
+    } else if (currentRoute === 'usuarios') {
+        openModal('Novo Usuário do Sistema', `
+            <form id="form-novo" onsubmit="submitForm(event, 'usuarios')">
+                <div class="form-group">
+                    <label>Nome de Usuário</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha Inicial</label>
+                    <input type="password" name="pass" class="form-control" required 
+                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
+                           title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Criar Usuário</button>
+            </form>
+        `);
     }
 });
 
@@ -914,6 +1024,29 @@ async function submitForm(event, endpoint, id = null) {
     }
     
     if(data.disponivel) data.disponivel = data.disponivel === 'true';
+
+    if(endpoint === 'usuarios') {
+        let users = window.getSystemUsers();
+        if(id) {
+            let u = users.find(x => x._id === id);
+            if(u) u.pass = data.pass;
+        } else {
+            if(users.find(u => u.username === data.username)) {
+                alert('Este nome de usuário já existe!');
+                return;
+            }
+            users.push({
+                _id: 'u' + Date.now(),
+                username: data.username,
+                pass: data.pass,
+                status: 'ativo'
+            });
+        }
+        localStorage.setItem('gvs_users', JSON.stringify(users));
+        closeModal();
+        renderRoute();
+        return;
+    }
 
     try {
         const btn = form.querySelector('button');

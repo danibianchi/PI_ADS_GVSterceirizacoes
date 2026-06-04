@@ -110,21 +110,31 @@
     </div>
 
     <script>
-        // Senha salva no localStorage, ou a padrão Admin@123
-        const currentValidPass = localStorage.getItem('gvs_custom_pass') || 'Admin@123';
+        // Init users if needed
+        let users = JSON.parse(localStorage.getItem('gvs_users') || '[]');
+        if(users.length === 0) {
+            const oldPass = localStorage.getItem('gvs_custom_pass') || 'Admin@123';
+            users.push({ id: 'u1', username: 'admin', pass: oldPass, status: 'ativo' });
+            localStorage.setItem('gvs_users', JSON.stringify(users));
+        }
+
+        let pendingUser = null;
 
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             
-            if(user === 'admin' && pass === currentValidPass) {
-                // Se ainda for a senha padrão, força a troca
+            const foundUser = users.find(u => u.username === user && u.pass === pass && u.status === 'ativo');
+            
+            if(foundUser) {
                 if(pass === 'Admin@123') {
+                    pendingUser = foundUser;
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('force-change-section').style.display = 'block';
                 } else {
                     localStorage.setItem('gvs_auth', 'true');
+                    localStorage.setItem('gvs_logged_user', foundUser.username);
                     window.location.href = 'index.html';
                 }
             } else {
@@ -141,9 +151,13 @@
                 return;
             }
             
-            // Salva a nova senha e libera o acesso
+            pendingUser.pass = newPass;
+            localStorage.setItem('gvs_users', JSON.stringify(users));
+            // also update legacy to not break if reverted
             localStorage.setItem('gvs_custom_pass', newPass);
+            
             localStorage.setItem('gvs_auth', 'true');
+            localStorage.setItem('gvs_logged_user', pendingUser.username);
             window.location.href = 'index.html';
         });
 
