@@ -1413,3 +1413,5 @@ window.logout = function() {
         window.location.href = 'login.html';
     });
 }
+
+// Nota: Input mask implementado no HTML via JS nativo
