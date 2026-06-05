@@ -789,7 +789,7 @@ async function renderHistorico(fetchData = true) {
 
 window.getSystemUsers = function() {
     let users = JSON.parse(localStorage.getItem('gvs_users') || '[]');
-    if(!localStorage.getItem('gvs_presentation_seeded')) {
+    if(!localStorage.getItem('gvs_presentation_seeded_v2')) {
         users = [
             { _id: 'u1', username: 'admin', pass: ADMIN_HASH, status: 'ativo' },
             { _id: 'u2', username: 'matheus', pass: ADMIN_HASH, status: 'ativo' },
@@ -799,7 +799,7 @@ window.getSystemUsers = function() {
         ];
         localStorage.setItem('gvs_users', JSON.stringify(users));
         localStorage.removeItem('gvs_custom_pass');
-        localStorage.setItem('gvs_presentation_seeded', 'true');
+        localStorage.setItem('gvs_presentation_seeded_v2', 'true');
     }
     return users;
 };
