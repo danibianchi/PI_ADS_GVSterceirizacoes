@@ -786,11 +786,10 @@ async function renderHistorico(fetchData = true) {
                 <td>${data}</td>
                 <td><span class="status-badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.2);">${h.acao.toUpperCase()}</span></td>
                 <td><strong>${h.entidade.toUpperCase()}</strong></td>
-                <td style="font-size: 12px; color: var(--text-secondary); max-width: 300px; white-space: pre-wrap; overflow-wrap: break-word;">
+                <td style="font-size: 12px; color: var(--text-secondary); max-width: 300px; overflow-wrap: break-word;">
                     <strong style="color: var(--text-primary);">ID:</strong> ${h.documentoId}<br>
                     <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.05);">
-                        ${formattedDetails}
-                    </div>
+${formattedDetails}</div>
                 </td>
             </tr>
         `;
