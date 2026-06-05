@@ -771,6 +771,7 @@ async function renderHistorico(fetchData = true) {
             if (detString) {
                 detalhesHtml = `<div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${detString}">Detalhes: ${detString}</div>`;
             }
+        }
 
         html += `
             <tr>
