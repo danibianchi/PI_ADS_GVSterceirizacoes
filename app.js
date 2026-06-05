@@ -773,12 +773,25 @@ async function renderHistorico(fetchData = true) {
             }
         }
 
+        let formattedDetails = '-';
+        if (h.detalhes) {
+            formattedDetails = Object.entries(h.detalhes).map(([key, val]) => {
+                const cleanKey = key.replace(/_/g, ' ').toUpperCase();
+                return `<span style="color: var(--primary);">${cleanKey}:</span> ${val}`;
+            }).join('<br>');
+        }
+
         html += `
             <tr>
                 <td>${data}</td>
                 <td><span class="status-badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.2);">${h.acao.toUpperCase()}</span></td>
                 <td><strong>${h.entidade.toUpperCase()}</strong></td>
-                <td style="font-family: monospace; font-size: 12px; color: var(--text-secondary); max-width: 300px; white-space: pre-wrap; overflow-wrap: break-word;">ID: ${h.documentoId}<br>${h.detalhes ? JSON.stringify(h.detalhes, null, 2) : '-'}</td>
+                <td style="font-size: 12px; color: var(--text-secondary); max-width: 300px; white-space: pre-wrap; overflow-wrap: break-word;">
+                    <strong style="color: var(--text-primary);">ID:</strong> ${h.documentoId}<br>
+                    <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        ${formattedDetails}
+                    </div>
+                </td>
             </tr>
         `;
     });
