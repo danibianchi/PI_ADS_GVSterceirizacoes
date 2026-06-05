@@ -366,24 +366,14 @@ function getPaginationHtml(type) {
 // ================= FETCH DE DADOS E RENDERIZAÇÃO =================
 
 async function renderDashboard() {
-    const [resClientes, resPrest, resContr, resHist] = await Promise.all([
-        fetch(`${API_URL}/clientes`), fetch(`${API_URL}/prestadores`), fetch(`${API_URL}/contratos`), fetch(`${API_URL}/historico`)
+    const [resClientes, resPrest, resContr, resOrdens] = await Promise.all([
+        fetch(`${API_URL}/clientes`), fetch(`${API_URL}/prestadores`), fetch(`${API_URL}/contratos`), fetch(`${API_URL}/ordens-servico`)
     ]);
 
     const clientes = await resClientes.json();
     const prestadores = await resPrest.json();
     const contratos = await resContr.json();
-    const historico = await resHist.json();
-
-    let historyHtml = historico.slice(0, 5).map(h => `
-        <div style="padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong style="color: var(--accent-color);">${h.acao.toUpperCase()}</strong> em ${h.entidade}
-                <br><small style="color: var(--text-secondary);">ID: ${h.documentoId}</small>
-            </div>
-            <span style="font-size: 12px; color: var(--text-secondary);">${new Date(h.data).toLocaleString('pt-BR')}</span>
-        </div>
-    `).join('');
+    const ordens = await resOrdens.json();
 
     contentArea.innerHTML = `
         <div class="stats-grid">
@@ -410,16 +400,75 @@ async function renderDashboard() {
             </div>
         </div>
 
-        <div class="glass-panel" style="margin-top: 30px; padding: 20px;">
-            <h3 style="margin-bottom: 20px; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-                <i class='bx bx-history' style="color: var(--accent-color);"></i> Atividades Recentes
-            </h3>
-            ${historyHtml || '<p style="color: var(--text-secondary);">Nenhuma atividade registrada ainda.</p>'}
-            <div style="margin-top: 15px; text-align: center;">
-                <a href="#" onclick="navigateTo('historico')" style="color: var(--accent-color); text-decoration: none; font-size: 14px; font-weight: bold;">Ver Auditoria Completa <i class='bx bx-right-arrow-alt'></i></a>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
+            <div class="glass-panel" style="padding: 20px;">
+                <h3 style="margin-bottom: 20px; font-size: 16px; text-align: center; color: var(--text-primary);">Status das Ordens de Serviço</h3>
+                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                    <canvas id="ordensChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-panel" style="padding: 20px;">
+                <h3 style="margin-bottom: 20px; font-size: 16px; text-align: center; color: var(--text-primary);">Especialidades dos Prestadores</h3>
+                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                    <canvas id="prestadoresChart"></canvas>
+                </div>
             </div>
         </div>
     `;
+
+    // Processar dados Ordens
+    const ordensPendentes = ordens.filter(o => o.status === 'pendente').length;
+    const ordensConcluidas = ordens.filter(o => o.status === 'concluida').length;
+    const ordensCanceladas = ordens.filter(o => o.status === 'cancelada').length;
+
+    new Chart(document.getElementById('ordensChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Pendentes', 'Concluídas', 'Canceladas'],
+            datasets: [{
+                data: [ordensPendentes, ordensConcluidas, ordensCanceladas],
+                backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#e2e8f0' } }
+            }
+        }
+    });
+
+    // Processar dados Prestadores
+    const especialidades = {};
+    prestadores.forEach(p => {
+        especialidades[p.especialidade] = (especialidades[p.especialidade] || 0) + 1;
+    });
+
+    new Chart(document.getElementById('prestadoresChart'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(especialidades),
+            datasets: [{
+                label: 'Quantidade',
+                data: Object.values(especialidades),
+                backgroundColor: '#3b82f6',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+            }
+        }
+    });
 }
 
 async function renderClientes(fetchData = true) {
