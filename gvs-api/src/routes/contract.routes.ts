@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { getContracts, createContract, updateContract, deleteContract } from '../controllers/contract.controller';
+import * as ContractController from '../controllers/contract.controller';
 const router = Router();
-router.get('/', getContracts);
-router.post('/', createContract);
-router.put('/:id', updateContract);
-router.delete('/:id', deleteContract);
+router.get('/', ContractController.getAll);
+router.get('/:id', ContractController.getById);
+router.post('/', ContractController.create);
+router.put('/:id', ContractController.update);
+router.delete('/:id', ContractController.remove);
 export default router;

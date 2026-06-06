@@ -1,4 +1,8 @@
 import { Request, Response } from 'express';
-import { History } from '../models/History';
-export const getHistory = async (req: Request, res: Response) => { const h = await History.find().sort({ data: -1 }); res.json(h); };
-export const createHistory = async (req: Request, res: Response) => { const h = await History.create(req.body); res.json(h); };
+import * as HistoryService from '../services/history.service';
+import { createHistorySchema } from '../schemas/history.schema';
+export const getAll = async (req: Request, res: Response) => { res.json(await HistoryService.getAllHistory()); };
+export const create = async (req: Request, res: Response) => {
+  const validatedData = createHistorySchema.parse(req.body);
+  res.status(201).json(await HistoryService.createHistory(validatedData));
+};

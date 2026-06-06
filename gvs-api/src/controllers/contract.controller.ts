@@ -1,6 +1,17 @@
 import { Request, Response } from 'express';
-import { Contract } from '../models/Contract';
-export const getContracts = async (req: Request, res: Response) => { const c = await Contract.find().populate('cliente').populate('prestador'); res.json(c); };
-export const createContract = async (req: Request, res: Response) => { const c = await Contract.create(req.body); res.json(c); };
-export const updateContract = async (req: Request, res: Response) => { const c = await Contract.findByIdAndUpdate(req.params.id, req.body, {new: true}); res.json(c); };
-export const deleteContract = async (req: Request, res: Response) => { await Contract.findByIdAndDelete(req.params.id); res.json({ message: 'Deleted' }); };
+import * as ContractService from '../services/contract.service';
+import { createContractSchema, updateContractSchema } from '../schemas/contract.schema';
+export const getAll = async (req: Request, res: Response) => { res.json(await ContractService.getAllContracts()); };
+export const getById = async (req: Request, res: Response) => { res.json(await ContractService.getContractById(req.params.id as string)); };
+export const create = async (req: Request, res: Response) => {
+  const validatedData = createContractSchema.parse(req.body);
+  res.status(201).json(await ContractService.createContract(validatedData));
+};
+export const update = async (req: Request, res: Response) => {
+  const validatedData = updateContractSchema.parse(req.body);
+  res.json(await ContractService.updateContract(req.params.id as string, validatedData));
+};
+export const remove = async (req: Request, res: Response) => {
+  await ContractService.deleteContract(req.params.id as string);
+  res.status(204).send();
+};

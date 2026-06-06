@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { getOS, createOS, updateOS, deleteOS } from '../controllers/os.controller';
+import * as OSController from '../controllers/os.controller';
 const router = Router();
-router.get('/', getOS);
-router.post('/', createOS);
-router.put('/:id', updateOS);
-router.delete('/:id', deleteOS);
+router.get('/', OSController.getAll);
+router.get('/:id', OSController.getById);
+router.post('/', OSController.create);
+router.put('/:id', OSController.update);
+router.delete('/:id', OSController.remove);
 export default router;
