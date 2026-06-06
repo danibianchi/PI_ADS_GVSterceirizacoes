@@ -65,7 +65,8 @@ git clone https://github.com/lbpb293/PI_ADS_GVSterceirizacoes.git
 cd PI_ADS_GVSterceirizacoes
 
 # 2. Rode o Frontend
-# Abra o arquivo index.html (dentro da pasta frontend/) no seu navegador ou utilize a extensão Live Server do VSCode.
+# Abra o arquivo index.html (na raiz do projeto) no seu navegador ou utilize a extensão Live Server do VSCode.
+# NÃO é necessário instalar nenhuma dependência (npm install) e nem banco de dados! O front consome a API na nuvem.
 ```
 
 ---
