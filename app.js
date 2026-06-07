@@ -1,4 +1,7 @@
-const API_URL = 'https://gvs-api.onrender.com/api';
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' 
+    ? 'http://localhost:3000/api' 
+    : 'https://gvs-api.onrender.com/api';
+
 
 // ============================================================
 // 🔒 AUTENTICAÇÃO JWT — Helper para enviar o token em toda chamada
@@ -389,7 +392,7 @@ function getPaginationHtml(type) {
 
 async function renderDashboard() {
     const [resClientes, resPrest, resContr, resOrdens] = await Promise.all([
-        fetch(`${API_URL}/clientes`), fetch(`${API_URL}/prestadores`), fetch(`${API_URL}/contratos`), fetch(`${API_URL}/ordens-servico`)
+        apiFetch(`${API_URL}/clientes`), apiFetch(`${API_URL}/prestadores`), apiFetch(`${API_URL}/contratos`), apiFetch(`${API_URL}/ordens-servico`)
     ]);
 
     const clientes = await resClientes.json();

@@ -111,7 +111,9 @@
     </div>
 
     <script>
-        const API_URL = 'https://gvs-api.onrender.com/api';
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' 
+            ? 'http://localhost:3000/api' 
+            : 'https://gvs-api.onrender.com/api';
 
         // Se já tiver token salvo e válido, vai direto pro sistema
         if (localStorage.getItem('gvs_token')) {
