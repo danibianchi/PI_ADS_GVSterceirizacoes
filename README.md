@@ -57,8 +57,8 @@ O projeto completo já está integrado e publicado na nuvem. Você pode testar o
 
  *(A API backend está hospedada gratuitamente no Render.com, o que significa que as primeiras requisições podem demorar alguns segundos para "acordar" o servidor).*
 
-### 💻 Execução Local
-Se você deseja inspecionar e rodar o projeto na sua máquina:
+### 💻 Execução Local (Modo Simples)
+Se você deseja inspecionar e rodar o front-end na sua máquina consumindo a API da nuvem:
 ```bash
 # 1. Clone o repositório
 git clone https://github.com/lbpb293/PI_ADS_GVSterceirizacoes.git
@@ -68,6 +68,15 @@ cd PI_ADS_GVSterceirizacoes
 # Abra o arquivo index.html (na raiz do projeto) no seu navegador ou utilize a extensão Live Server do VSCode.
 # NÃO é necessário instalar nenhuma dependência (npm install) e nem banco de dados! O front consome a API na nuvem.
 ```
+
+### 🔌 Execução 100% Offline (Modo Completo)
+Caso você não tenha internet no dia da apresentação, você pode rodar o backend inteirinho na sua máquina:
+1. Instale o **Node.js** e o **MongoDB Compass** (ou MongoDB Server) no seu computador.
+2. Dentro da pasta `gvs-api/`, crie um arquivo chamado `.env` e coloque a sua string de conexão local do MongoDB: `MONGO_URI=mongodb://localhost:27017/gvs`
+3. Abra o terminal na pasta `gvs-api` e instale as dependências: `npm install`
+4. Inicie o servidor local: `npm run dev` (A API vai rodar na porta 3000).
+5. No arquivo `app.js` (raiz do projeto), mude a primeira linha para: `const API_URL = 'http://localhost:3000/api';`
+6. Abra o `index.html` e o sistema estará rodando 100% offline no seu computador!
 
 ---
 

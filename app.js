@@ -1,14 +1,35 @@
 const API_URL = 'https://gvs-api.onrender.com/api';
 
-// Função de Hash SHA-256 (Web Crypto API)
-async function hashPassword(message) {
-    const msgUint8 = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+// ============================================================
+// 🔒 AUTENTICAÇÃO JWT — Helper para enviar o token em toda chamada
+// ============================================================
+function getAuthHeaders() {
+    const token = localStorage.getItem('gvs_token');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+    };
 }
 
-const ADMIN_HASH = 'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7';
+// Função auxiliar para fetch autenticado (substitui fetch puro)
+window.apiFetch = async function(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            ...getAuthHeaders(),
+            ...(options.headers || {})
+        }
+    });
+    // Se o token expirou ou é inválido, redireciona para login
+    if (response.status === 401) {
+        localStorage.removeItem('gvs_token');
+        localStorage.removeItem('gvs_auth');
+        window.location.href = 'login.html';
+        return;
+    }
+    return response;
+};
+
 
 window.showAlert = function(msg) {
     const overlay = document.createElement('div');
@@ -93,10 +114,11 @@ let sortAsc = true;
 window.currentPage = 1;
 window.itemsPerPage = 10;
 
-// Checagem de Login Frontend MOCK
-if(localStorage.getItem('gvs_auth') !== 'true') {
+// Checagem de Login — verifica token JWT real
+if (!localStorage.getItem('gvs_token') || localStorage.getItem('gvs_auth') !== 'true') {
     window.location.href = 'login.html';
 }
+
 
 // ================= MÁSCARAS DE INPUT =================
 window.maskPhone = function(el) {
@@ -473,7 +495,7 @@ async function renderDashboard() {
 
 async function renderClientes(fetchData = true) {
     if(fetchData) {
-        const response = await fetch(`${API_URL}/clientes`);
+        const response = await apiFetch(`${API_URL}/clientes`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
         window.currentPage = 1;
@@ -536,7 +558,7 @@ async function renderClientes(fetchData = true) {
 
 async function renderPrestadores(fetchData = true) {
     if(fetchData) {
-        const response = await fetch(`${API_URL}/prestadores`);
+        const response = await apiFetch(`${API_URL}/prestadores`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
         window.currentPage = 1;
@@ -600,7 +622,7 @@ async function renderPrestadores(fetchData = true) {
 
 async function renderContratos(fetchData = true) {
     if(fetchData) {
-        const response = await fetch(`${API_URL}/contratos`);
+        const response = await apiFetch(`${API_URL}/contratos`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
         window.currentPage = 1;
@@ -706,10 +728,10 @@ window.viewOrderDetails = function(id) {
 
 async function renderOrdens(fetchData = true) {
     if(fetchData) {
-        const response = await fetch(`${API_URL}/ordens-servico`);
+        const response = await apiFetch(`${API_URL}/ordens-servico`);
         window.currentDataList = await response.json();
         
-        const resCont = await fetch(`${API_URL}/contratos`);
+        const resCont = await apiFetch(`${API_URL}/contratos`);
         const contratos = await resCont.json();
         
         window.currentDataList.forEach(o => {
@@ -785,7 +807,7 @@ async function renderOrdens(fetchData = true) {
 
 async function renderHistorico(fetchData = true) {
     if(fetchData) {
-        const response = await fetch(`${API_URL}/historico`);
+        const response = await apiFetch(`${API_URL}/historico`);
         window.currentDataList = await response.json();
         window.filteredDataList = [...window.currentDataList];
         window.currentPage = 1;
@@ -955,7 +977,7 @@ window.toggleStatus = function(id, type, currentStatus) {
         }
 
         try {
-            const response = await fetch(`${API_URL}/${type}/${id}`, {
+            const response = await apiFetch(`${API_URL}/${type}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedData)
@@ -964,7 +986,7 @@ window.toggleStatus = function(id, type, currentStatus) {
             if(!response.ok) throw new Error('Falha ao alterar status');
 
             const entityName = type === 'ordens-servico' ? 'OrdemServico' : type.charAt(0).toUpperCase() + type.slice(1);
-            await fetch(`${API_URL}/historico`, {
+            await apiFetch(`${API_URL}/historico`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ acao: 'atualizacao_status', entidade: entityName, documentoId: id, detalhes: updatedData })
@@ -996,7 +1018,7 @@ window.deleteRecord = function(id, type) {
             // Regra de Negócio (Kevin): Impedir exclusão se houver contrato vinculado
             if (type === 'clientes' || type === 'prestadores') {
                 try {
-                    const resCont = await fetch(`${API_URL}/contratos`);
+                    const resCont = await apiFetch(`${API_URL}/contratos`);
                     const contratos = await resCont.json();
                     
                     const temContrato = contratos.some(c => {
@@ -1014,14 +1036,14 @@ window.deleteRecord = function(id, type) {
                 }
             }
 
-            const response = await fetch(`${API_URL}/${type}/${id}`, {
+            const response = await apiFetch(`${API_URL}/${type}/${id}`, {
                 method: 'DELETE'
             });
 
             if(!response.ok) throw new Error('Falha ao excluir registro');
 
             const entityName = type === 'ordens-servico' ? 'OrdemServico' : type.charAt(0).toUpperCase() + type.slice(1);
-            await fetch(`${API_URL}/historico`, {
+            await apiFetch(`${API_URL}/historico`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ acao: 'exclusao', entidade: entityName, documentoId: id, detalhes: {} })
@@ -1147,7 +1169,7 @@ window.editRecord = async function(id, type) {
             </form>
         `);
     } else if (type === 'ordens-servico') {
-        const resCont = await fetch(`${API_URL}/contratos`);
+        const resCont = await apiFetch(`${API_URL}/contratos`);
         const contratos = await resCont.json();
         let contOptions = contratos.map(c => `<option value="${c._id}" ${record.contratoId === c._id ? 'selected' : ''}>${c.clienteId?.razao_social || 'Contrato'} - ${c.valor_acordado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</option>`).join('');
 
@@ -1276,7 +1298,7 @@ btnNovo.addEventListener('click', async () => {
             </form>
         `);
     } else if (currentRoute === 'ordens') {
-        const resCont = await fetch(`${API_URL}/contratos`);
+        const resCont = await apiFetch(`${API_URL}/contratos`);
         const contratos = await resCont.json();
         let contOptions = contratos.map(c => `<option value="${c._id}">${c.clienteId?.razao_social || 'Contrato'} - ${c.valor_acordado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</option>`).join('');
 
@@ -1417,7 +1439,7 @@ async function submitForm(event, endpoint, id = null) {
         const entityName = endpoint === 'ordens-servico' ? 'OrdemServico' : endpoint.charAt(0).toUpperCase() + endpoint.slice(1);
         const docId = id || savedData._id;
         if (docId) {
-            await fetch(`${API_URL}/historico`, {
+            await apiFetch(`${API_URL}/historico`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

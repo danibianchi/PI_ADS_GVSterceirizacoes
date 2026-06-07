@@ -68,12 +68,12 @@
         <!-- Formulário de Login -->
         <div id="login-section">
             <h2 style="margin-bottom: 20px; color: #0f172a;">Acesso ao Sistema</h2>
-            <p class="error-msg" id="error-msg">Usuário ou senha incorretos.</p>
+            <p class="error-msg" id="error-msg">E-mail ou senha incorretos.</p>
             
             <form id="login-form">
                 <div class="form-group" style="text-align: left;">
-                    <label>Usuário</label>
-                    <input type="text" id="username" class="form-control" required placeholder="admin">
+                    <label>E-mail</label>
+                    <input type="email" id="username" class="form-control" required placeholder="admin@gvs.com">
                 </div>
                 <div class="form-group" style="text-align: left; margin-bottom: 5px;">
                     <label>Senha</label>
@@ -111,98 +111,50 @@
     </div>
 
     <script>
-        // Função de Hash SHA-256 (Web Crypto API)
-        async function hashPassword(message) {
-            const msgUint8 = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const API_URL = 'https://gvs-api.onrender.com/api';
+
+        // Se já tiver token salvo e válido, vai direto pro sistema
+        if (localStorage.getItem('gvs_token')) {
+            window.location.href = 'index.html';
         }
-
-        const ADMIN_HASH = 'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7';
-
-        // Init users if needed
-        let users = JSON.parse(localStorage.getItem('gvs_users') || '[]');
-        
-        // Seeding presentation users
-        if(!localStorage.getItem('gvs_presentation_seeded_v2')) {
-            users = [
-                { _id: 'u1', username: 'admin', pass: ADMIN_HASH, status: 'ativo' },
-                { _id: 'u2', username: 'matheus', pass: ADMIN_HASH, status: 'ativo' },
-                { _id: 'u3', username: 'luis', pass: ADMIN_HASH, status: 'ativo' },
-                { _id: 'u4', username: 'kevin', pass: ADMIN_HASH, status: 'ativo' },
-                { _id: 'u5', username: 'dani', pass: ADMIN_HASH, status: 'ativo' }
-            ];
-            localStorage.setItem('gvs_users', JSON.stringify(users));
-            localStorage.setItem('gvs_presentation_seeded_v2', 'true');
-        }
-
-        let pendingUser = null;
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-            
-            const passHash = await hashPassword(pass);
-            const foundUser = users.find(u => u.username === user && u.pass === passHash && u.status === 'ativo');
-            
-            if(foundUser) {
-                if(passHash === ADMIN_HASH) {
-                    pendingUser = foundUser;
-                    document.getElementById('login-section').style.display = 'none';
-                    document.getElementById('force-change-section').style.display = 'block';
-                } else {
-                    localStorage.setItem('gvs_auth', 'true');
-                    localStorage.setItem('gvs_logged_user', foundUser.username);
-                    window.location.href = 'index.html';
+            const email = document.getElementById('username').value;
+            const senha = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+            const btn = e.target.querySelector('button[type=submit]');
+
+            btn.disabled = true;
+            btn.innerHTML = 'Entrando...';
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Credenciais inválidas');
                 }
-            } else {
-                document.getElementById('error-msg').style.display = 'block';
+
+                // Salva o token JWT e dados do usuário
+                localStorage.setItem('gvs_token', data.token);
+                localStorage.setItem('gvs_logged_user', data.usuario.nome);
+                localStorage.setItem('gvs_auth', 'true');
+
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorMsg.textContent = err.message || 'E-mail ou senha incorretos.';
+                errorMsg.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = "Entrar <i class='bx bx-log-in'></i>";
             }
         });
-
-        document.getElementById('change-pass-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newPass = document.getElementById('new-password').value;
-            const newPassHash = await hashPassword(newPass);
-            
-            if(newPassHash === ADMIN_HASH) {
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                
-                const box = document.createElement('div');
-                box.className = 'glass-panel modal-content';
-                box.style.textAlign = 'center';
-                
-                box.innerHTML = `
-                    <p style="margin-bottom: 24px; font-size: 16px; line-height: 1.5; color: var(--text-primary);">A nova senha não pode ser igual à senha inicial padrão.</p>
-                    <button class="btn btn-primary" onclick="
-                        const ov = this.closest('.modal-overlay');
-                        ov.classList.remove('active');
-                        setTimeout(() => ov.remove(), 300);
-                    " style="width: 100%; justify-content: center;">OK</button>
-                `;
-                
-                overlay.appendChild(box);
-                document.body.appendChild(overlay);
-                
-                setTimeout(() => overlay.classList.add('active'), 10);
-                return;
-            }
-            
-            pendingUser.pass = newPassHash;
-            localStorage.setItem('gvs_users', JSON.stringify(users));
-            
-            localStorage.setItem('gvs_auth', 'true');
-            localStorage.setItem('gvs_logged_user', pendingUser.username);
-            window.location.href = 'index.html';
-        });
-
-        // Se já estiver logado, vai pro index
-        if(localStorage.getItem('gvs_auth') === 'true') {
-            window.location.href = 'index.html';
-        }
     </script>
 </body>
 </html>

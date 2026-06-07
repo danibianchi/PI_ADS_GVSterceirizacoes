@@ -1,0 +1,342 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-01-01T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_gvs_001",
+      "_type": "workspace",
+      "name": "GVS Terceirizações — API",
+      "description": "Coleção completa da API REST do sistema GVS. Importe este arquivo no Insomnia para testar todas as rotas.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_gvs_base",
+      "_type": "environment",
+      "parentId": "wrk_gvs_001",
+      "name": "🌍 Ambiente Local",
+      "data": {
+        "base_url": "http://localhost:3000/api",
+        "token": ""
+      },
+      "isPrivate": false
+    },
+    {
+      "_id": "env_gvs_nuvem",
+      "_type": "environment",
+      "parentId": "wrk_gvs_001",
+      "name": "☁️ Ambiente Nuvem (Render)",
+      "data": {
+        "base_url": "https://gvs-api.onrender.com/api",
+        "token": ""
+      },
+      "isPrivate": false
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_gvs_001",
+      "name": "🔐 Auth (Autenticação)"
+    },
+    {
+      "_id": "req_register",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Registrar Usuário (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/register",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Admin GVS\",\n  \"email\": \"admin@gvs.com\",\n  \"senha\": \"admin123\"\n}"
+      },
+      "description": "Cria um novo usuário no sistema. Execute apenas uma vez para criar o admin. Resposta: { id, nome, email }"
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login (POST) → Salvar token!",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/login",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@gvs.com\",\n  \"senha\": \"admin123\"\n}"
+      },
+      "description": "Faz login e retorna um token JWT. Copie o token da resposta, cole na variável de ambiente 'token' e use nas demais rotas protegidas."
+    },
+    {
+      "_id": "fld_clientes",
+      "_type": "request_group",
+      "parentId": "wrk_gvs_001",
+      "name": "👥 Clientes"
+    },
+    {
+      "_id": "req_clientes_get",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Listar Clientes (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/clientes",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }],
+      "description": "Retorna todos os clientes cadastrados. Requer token JWT no header."
+    },
+    {
+      "_id": "req_clientes_get_id",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Buscar Cliente por ID (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/clientes/:id",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }],
+      "description": "Substitua :id pelo _id do cliente que deseja buscar."
+    },
+    {
+      "_id": "req_clientes_post",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Criar Cliente (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/clientes",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Empresa Exemplo LTDA\",\n  \"cnpj\": \"12.345.678/0001-99\",\n  \"email\": \"contato@empresa.com\",\n  \"telefone\": \"(11) 99999-1234\",\n  \"cidade\": \"Indaiatuba\",\n  \"estado\": \"SP\"\n}"
+      },
+      "description": "Cadastra um novo cliente. O Zod valida os campos antes de salvar no MongoDB."
+    },
+    {
+      "_id": "req_clientes_put",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Atualizar Cliente (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/clientes/:id",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"telefone\": \"(11) 98888-5678\"\n}"
+      },
+      "description": "Atualiza parcialmente um cliente. Substitua :id pelo ID do cliente."
+    },
+    {
+      "_id": "req_clientes_delete",
+      "_type": "request",
+      "parentId": "fld_clientes",
+      "name": "Deletar Cliente (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/clientes/:id",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }],
+      "description": "Remove um cliente pelo ID. Retorna status 204 (No Content) em caso de sucesso."
+    },
+    {
+      "_id": "fld_prestadores",
+      "_type": "request_group",
+      "parentId": "wrk_gvs_001",
+      "name": "🛠️ Prestadores"
+    },
+    {
+      "_id": "req_prestadores_get",
+      "_type": "request",
+      "parentId": "fld_prestadores",
+      "name": "Listar Prestadores (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/prestadores",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }]
+    },
+    {
+      "_id": "req_prestadores_post",
+      "_type": "request",
+      "parentId": "fld_prestadores",
+      "name": "Criar Prestador (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/prestadores",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Carlos Silva\",\n  \"cpfCnpj\": \"123.456.789-00\",\n  \"tipoServico\": \"Elétrica\",\n  \"status\": \"ativo\",\n  \"contato\": \"(11) 97777-4321\"\n}"
+      }
+    },
+    {
+      "_id": "req_prestadores_put",
+      "_type": "request",
+      "parentId": "fld_prestadores",
+      "name": "Atualizar Prestador (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/prestadores/:id",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": { "mimeType": "application/json", "text": "{\n  \"status\": \"inativo\"\n}" }
+    },
+    {
+      "_id": "req_prestadores_delete",
+      "_type": "request",
+      "parentId": "fld_prestadores",
+      "name": "Deletar Prestador (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/prestadores/:id",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }]
+    },
+    {
+      "_id": "fld_contratos",
+      "_type": "request_group",
+      "parentId": "wrk_gvs_001",
+      "name": "📄 Contratos"
+    },
+    {
+      "_id": "req_contratos_get",
+      "_type": "request",
+      "parentId": "fld_contratos",
+      "name": "Listar Contratos (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/contratos",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }],
+      "description": "Retorna todos os contratos com os dados do Cliente e Prestador populados automaticamente via Mongoose .populate()."
+    },
+    {
+      "_id": "req_contratos_post",
+      "_type": "request",
+      "parentId": "fld_contratos",
+      "name": "Criar Contrato (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/contratos",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"cliente\": \"COLE_O_ID_DO_CLIENTE_AQUI\",\n  \"prestador\": \"COLE_O_ID_DO_PRESTADOR_AQUI\",\n  \"dataInicio\": \"2025-06-01\",\n  \"dataTermino\": \"2025-12-31\",\n  \"valor\": 2500.00,\n  \"status\": \"ativo\"\n}"
+      }
+    },
+    {
+      "_id": "req_contratos_put",
+      "_type": "request",
+      "parentId": "fld_contratos",
+      "name": "Atualizar Contrato (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/contratos/:id",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": { "mimeType": "application/json", "text": "{\n  \"status\": \"encerrado\"\n}" }
+    },
+    {
+      "_id": "req_contratos_delete",
+      "_type": "request",
+      "parentId": "fld_contratos",
+      "name": "Deletar Contrato (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/contratos/:id",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }]
+    },
+    {
+      "_id": "fld_os",
+      "_type": "request_group",
+      "parentId": "wrk_gvs_001",
+      "name": "📋 Ordens de Serviço (OS)"
+    },
+    {
+      "_id": "req_os_get",
+      "_type": "request",
+      "parentId": "fld_os",
+      "name": "Listar OS (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/ordens-servico",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }]
+    },
+    {
+      "_id": "req_os_post",
+      "_type": "request",
+      "parentId": "fld_os",
+      "name": "Criar OS (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/ordens-servico",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"contrato\": \"COLE_O_ID_DO_CONTRATO_AQUI\",\n  \"descricao\": \"Manutenção elétrica preventiva no andar 3\",\n  \"dataExecucao\": \"2025-06-15\",\n  \"status\": \"pendente\",\n  \"observacoes\": \"Levar EPI completo\"\n}"
+      }
+    },
+    {
+      "_id": "req_os_put",
+      "_type": "request",
+      "parentId": "fld_os",
+      "name": "Atualizar OS (PUT)",
+      "method": "PUT",
+      "url": "{{ base_url }}/ordens-servico/:id",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": { "mimeType": "application/json", "text": "{\n  \"status\": \"concluída\"\n}" }
+    },
+    {
+      "_id": "req_os_delete",
+      "_type": "request",
+      "parentId": "fld_os",
+      "name": "Deletar OS (DELETE)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/ordens-servico/:id",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }]
+    },
+    {
+      "_id": "fld_historico",
+      "_type": "request_group",
+      "parentId": "wrk_gvs_001",
+      "name": "📜 Histórico de Auditoria"
+    },
+    {
+      "_id": "req_historico_get",
+      "_type": "request",
+      "parentId": "fld_historico",
+      "name": "Listar Histórico (GET)",
+      "method": "GET",
+      "url": "{{ base_url }}/historico",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ token }}" }],
+      "description": "Retorna todos os registros de auditoria, ordenados do mais recente ao mais antigo."
+    },
+    {
+      "_id": "req_historico_post",
+      "_type": "request",
+      "parentId": "fld_historico",
+      "name": "Registrar Ação (POST)",
+      "method": "POST",
+      "url": "{{ base_url }}/historico",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token }}" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"acao\": \"CRIACAO\",\n  \"entidade\": \"Cliente\",\n  \"detalhes\": { \"nome\": \"Empresa Exemplo LTDA\" }\n}"
+      }
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "parentId": "wrk_gvs_001",
+      "name": "✅ Health Check (GET) — Pública",
+      "method": "GET",
+      "url": "http://localhost:3000/",
+      "description": "Rota pública que verifica se a API está no ar. Não precisa de token. Use para confirmar que o servidor subiu corretamente."
+    }
+  ]
+}
