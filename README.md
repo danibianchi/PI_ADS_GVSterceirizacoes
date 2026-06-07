@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/logo.png" alt="GVS Logo" width="200" />
+  <img src="logo.png" alt="GVS Logo" width="200" />
   <h1>GVS Terceirizações</h1>
   <p><strong>Sistema de Gestão de Clientes, Prestadores e Ordens de Serviço</strong></p>
 </div>
