@@ -195,6 +195,34 @@ window.navigateTo = function(target, isBack = false) {
     sortField = null;
     window.currentPage = 1;
     searchInput.value = '';
+    
+    // Atualiza os Filtros de Status baseados na tela atual
+    const statusFilter = document.getElementById('status-filter');
+    if (statusFilter) {
+        if (target === 'contratos') {
+            statusFilter.innerHTML = `
+                <option value="todos">Todos os Status</option>
+                <option value="ativo">Ativos</option>
+                <option value="encerrado">Encerrados</option>
+                <option value="cancelado">Cancelados</option>
+            `;
+        } else if (target === 'ordens') {
+            statusFilter.innerHTML = `
+                <option value="todos">Todos os Status</option>
+                <option value="pendente">Pendentes</option>
+                <option value="em andamento">Em Andamento</option>
+                <option value="concluida">Concluídas</option>
+                <option value="cancelada">Canceladas</option>
+            `;
+        } else {
+            statusFilter.innerHTML = `
+                <option value="todos">Todos os Status</option>
+                <option value="ativo">Ativos / Disponíveis</option>
+                <option value="inativo">Inativos / Indisponíveis</option>
+            `;
+        }
+    }
+
     if(window.innerWidth <= 768) sidebar.classList.remove('active');
     renderRoute();
 }
@@ -217,20 +245,25 @@ window.applyFilters = function() {
     window.filteredDataList = window.currentDataList.filter(item => {
         let matchesSearch = true;
         if (term) {
-            matchesSearch = Object.values(item).some(val => 
-                val !== null && val !== undefined && val.toString().toLowerCase().includes(term)
-            );
+            // JSON stringify garante que a pesquisa busque dentro de objetos aninhados como clienteId.razao_social
+            matchesSearch = JSON.stringify(item).toLowerCase().includes(term);
         }
         
         let matchesStatus = true;
         if (statusVal !== 'todos') {
-            let itemStatus = 'ativo';
-            if (item.status) {
-                if (item.status === 'inativo' || item.status === 'encerrado' || item.status === 'cancelado') itemStatus = 'inativo';
-            } else if (item.hasOwnProperty('disponivel')) {
-                itemStatus = item.disponivel ? 'ativo' : 'inativo';
+            if (currentRoute === 'contratos' || currentRoute === 'ordens') {
+                // Para Contratos e Ordens, usamos o status exato selecionado no dropdown
+                matchesStatus = (item.status === statusVal);
+            } else {
+                // Para Clientes/Prestadores mantemos a lógica de Ativo/Inativo
+                let itemStatus = 'ativo';
+                if (item.status) {
+                    if (item.status === 'inativo') itemStatus = 'inativo';
+                } else if (item.hasOwnProperty('disponivel')) {
+                    itemStatus = item.disponivel ? 'ativo' : 'inativo';
+                }
+                matchesStatus = (itemStatus === statusVal);
             }
-            matchesStatus = (itemStatus === statusVal);
         }
         
         return matchesSearch && matchesStatus;
@@ -637,8 +670,8 @@ async function renderContratos(fetchData = true) {
             <thead>
                 <tr>
                     <th style="cursor: pointer;" onclick="sortData('_id', 'contratos')">ID do Contrato ${getSortIcon('_id')}</th>
-                    <th style="cursor: pointer;" onclick="sortData('clienteId.razao_social', 'contratos')">Cliente ${getSortIcon('clienteId.razao_social')}</th>
-                    <th style="cursor: pointer;" onclick="sortData('prestadorId.nome', 'contratos')">Prestador ${getSortIcon('prestadorId.nome')}</th>
+                    <th style="cursor: pointer;" onclick="sortData('cliente.razao_social', 'contratos')">Cliente ${getSortIcon('cliente.razao_social')}</th>
+                    <th style="cursor: pointer;" onclick="sortData('prestador.nome', 'contratos')">Prestador ${getSortIcon('prestador.nome')}</th>
                     <th style="cursor: pointer;" onclick="sortData('data_inicio', 'contratos')">Início ${getSortIcon('data_inicio')}</th>
                     <th style="cursor: pointer;" onclick="sortData('valor_acordado', 'contratos')">Valor ${getSortIcon('valor_acordado')}</th>
                     <th style="cursor: pointer;" onclick="sortData('status', 'contratos')">Status ${getSortIcon('status')}</th>
@@ -656,8 +689,10 @@ async function renderContratos(fetchData = true) {
     const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
 
     paginatedData.forEach(c => {
-        const clienteNome = c.clienteId?.razao_social || 'Desconhecido';
-        const prestadorNome = c.prestadorId?.nome || 'Desconhecido';
+        const cliObj = c.cliente || c.clienteId;
+        const prestObj = c.prestador || c.prestadorId;
+        const clienteNome = cliObj?.razao_social || 'Desconhecido';
+        const prestadorNome = prestObj?.nome || 'Desconhecido';
         const data = new Date(c.data_inicio).toLocaleDateString('pt-BR');
         const valorFormatado = c.valor_acordado.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
         const isAtivo = c.status === 'ativo';
@@ -724,7 +759,7 @@ window.viewOrderDetails = function(id) {
                 </button>
             </div>
             
-            <button class="btn btn-primary" onclick="closeModal()" style="width: 100%; justify-content: center; background: transparent; border-color: var(--border-color); color: var(--text-primary);">Voltar para Tabela</button>
+            <button class="btn btn-primary" onclick="closeModal()" style="width: 100%; justify-content: center;">Voltar para Tabela</button>
         </div>
     `);
 }
@@ -741,8 +776,10 @@ async function renderOrdens(fetchData = true) {
             const cId = typeof o.contratoId === 'object' ? o.contratoId?._id : o.contratoId;
             const contrato = contratos.find(c => c._id === cId);
             if (contrato) {
-                o.solicitante = contrato.clienteId?.razao_social || 'Desconhecido';
-                o.executor = contrato.prestadorId?.nome || 'Desconhecido';
+                const cCli = contrato.cliente || contrato.clienteId;
+                const cPrest = contrato.prestador || contrato.prestadorId;
+                o.solicitante = cCli?.razao_social || 'Desconhecido';
+                o.executor = cPrest?.nome || 'Desconhecido';
             } else {
                 o.solicitante = 'Desconhecido';
                 o.executor = 'Desconhecido';
@@ -1128,7 +1165,7 @@ window.editRecord = async function(id, type) {
         `);
     } else if (type === 'contratos') {
         const [resCli, resPrest] = await Promise.all([
-            fetch(`${API_URL}/clientes`), fetch(`${API_URL}/prestadores`)
+            apiFetch(`${API_URL}/clientes`), apiFetch(`${API_URL}/prestadores`)
         ]);
         const clientes = await resCli.json();
         const prestadores = await resPrest.json();
@@ -1267,7 +1304,7 @@ btnNovo.addEventListener('click', async () => {
         `);
     } else if (currentRoute === 'contratos') {
         const [resCli, resPrest] = await Promise.all([
-            fetch(`${API_URL}/clientes`), fetch(`${API_URL}/prestadores`)
+            apiFetch(`${API_URL}/clientes`), apiFetch(`${API_URL}/prestadores`)
         ]);
         const clientes = await resCli.json();
         const prestadores = await resPrest.json();
@@ -1356,18 +1393,18 @@ async function submitForm(event, endpoint, id = null) {
         showAlert('O Nome deve conter letras.');
         return;
     }
-    if(data.cnpj && data.cnpj.replace(/\\D/g, '').length !== 14) {
+    if(data.cnpj && data.cnpj.replace(/\D/g, '').length !== 14) {
         showAlert('Por favor, preencha o CNPJ completo com 14 dígitos válidos.');
         return;
     }
     if(data.cpf_cnpj) {
-        const cLen = data.cpf_cnpj.replace(/\\D/g, '').length;
+        const cLen = data.cpf_cnpj.replace(/\D/g, '').length;
         if(cLen !== 11 && cLen !== 14) {
             showAlert('Por favor, preencha o CPF (11 dígitos) ou CNPJ (14 dígitos) completo.');
             return;
         }
     }
-    if(data.telefone && data.telefone.replace(/\\D/g, '').length < 10) {
+    if(data.telefone && data.telefone.replace(/\D/g, '').length < 10) {
         showAlert('Por favor, preencha o Telefone completo com DDD.');
         return;
     }
@@ -1426,7 +1463,7 @@ async function submitForm(event, endpoint, id = null) {
         const url = id ? `${API_URL}/${endpoint}/${id}` : `${API_URL}/${endpoint}`;
         const method = id ? 'PUT' : 'POST';
 
-        const response = await fetch(url, {
+        const response = await apiFetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -1435,7 +1472,11 @@ async function submitForm(event, endpoint, id = null) {
         const savedData = await response.json();
         
         if (!response.ok) {
-            throw new Error(savedData.message || savedData.error || 'Erro ao comunicar com o servidor.');
+            // Se for erro do Zod (array de detalhes), mostra o primeiro erro detalhado
+            if (savedData.detalhes && savedData.detalhes.length > 0) {
+                throw new Error(`${savedData.erro}: ${savedData.detalhes[0].mensagem}`);
+            }
+            throw new Error(savedData.erro || savedData.message || savedData.error || 'Erro ao comunicar com o servidor.');
         }
 
         // Salvar na auditoria com Detalhes
