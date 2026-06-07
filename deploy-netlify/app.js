@@ -2,6 +2,8 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
     ? 'http://localhost:3000/api' 
     : 'https://gvs-api.onrender.com/api';
 
+const ADMIN_HASH = "mock_hash_123";
+window.hashPassword = async function(pass) { return "hashed_" + pass; };
 
 // ============================================================
 // 🔒 AUTENTICAÇÃO JWT — Helper para enviar o token em toda chamada
@@ -237,7 +239,8 @@ window.goBack = function() {
 }
 // Pesquisa e Filtros
 window.applyFilters = function() {
-    const term = searchInput.value.toLowerCase();
+    const normalizeStr = str => str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
+    const term = normalizeStr(searchInput.value);
     const statusVal = document.getElementById('status-filter')?.value || 'todos';
     
     window.currentPage = 1;
@@ -245,14 +248,19 @@ window.applyFilters = function() {
     window.filteredDataList = window.currentDataList.filter(item => {
         let matchesSearch = true;
         if (term) {
-            // JSON stringify garante que a pesquisa busque dentro de objetos aninhados como clienteId.razao_social
-            matchesSearch = JSON.stringify(item).toLowerCase().includes(term);
+            // JSON stringify garante que a pesquisa busque dentro de objetos aninhados e ignora acentos
+            matchesSearch = normalizeStr(JSON.stringify(item)).includes(term);
         }
         
         let matchesStatus = true;
         if (statusVal !== 'todos') {
-            if (currentRoute === 'contratos' || currentRoute === 'ordens') {
-                // Para Contratos e Ordens, usamos o status exato selecionado no dropdown
+            if (currentRoute === 'contratos') {
+                if (statusVal === 'encerrado') {
+                    matchesStatus = (item.status === 'encerrado' || item.status === 'inativo');
+                } else {
+                    matchesStatus = (item.status === statusVal);
+                }
+            } else if (currentRoute === 'ordens') {
                 matchesStatus = (item.status === statusVal);
             } else {
                 // Para Clientes/Prestadores mantemos a lógica de Ativo/Inativo
@@ -696,6 +704,7 @@ async function renderContratos(fetchData = true) {
         const data = new Date(c.data_inicio).toLocaleDateString('pt-BR');
         const valorFormatado = c.valor_acordado.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
         const isAtivo = c.status === 'ativo';
+        const statusDisplay = isAtivo ? 'Ativo' : 'Encerrado';
         
         html += `
             <tr>
@@ -704,7 +713,7 @@ async function renderContratos(fetchData = true) {
                 <td>${prestadorNome}</td>
                 <td>${data}</td>
                 <td>${valorFormatado}</td>
-                <td><span class="status-badge status-${c.status}">${c.status.toUpperCase()}</span></td>
+                <td><span class="status-badge status-${c.status}">${statusDisplay}</span></td>
                 <td>
                     <div style="display: flex; gap: 8px;">
                         <button class="btn-icon" title="Editar" onclick="editRecord('${c._id}', 'contratos')"><i class='bx bx-edit'></i></button>
@@ -1481,7 +1490,7 @@ async function submitForm(event, endpoint, id = null) {
 
         // Salvar na auditoria com Detalhes
         const entityName = endpoint === 'ordens-servico' ? 'OrdemServico' : endpoint.charAt(0).toUpperCase() + endpoint.slice(1);
-        const docId = id || savedData._id;
+        const docId = id || savedData._id || savedData.id || "N/A";
         if (docId) {
             await apiFetch(`${API_URL}/historico`, {
                 method: 'POST',

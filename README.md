@@ -8,79 +8,74 @@
 
 ## 🎯 Sobre o Projeto
 
-O **GVS Terceirizações** é um sistema completo (API RESTful + Interface Web) desenvolvido para modernizar e centralizar a gestão de empresas de terceirização. Este projeto foi concebido e construído como requisito para o Projeto Interdisciplinar.
+O **GVS Terceirizações** é um sistema corporativo completo (API RESTful + Interface Web) desenvolvido para modernizar a gestão de empresas provedoras de mão de obra. Este projeto foi construído do absoluto zero como requisito do **Projeto Interdisciplinar** (2º Semestre de ADS).
 
-O foco central da aplicação é fornecer uma infraestrutura de dados rápida, segura e escalável para o gerenciamento de contratos complexos que envolvem múltiplas entidades (Cliente Solicitante e Prestador Executor), além de uma interface visual rica e responsiva para facilitar a operação diária.
-
----
-
-## ✨ Funcionalidades Principais
-
-- ⚙️ **Processamento Backend:** API estruturada com validação restrita de dados de entrada e regras de negócio robustas (ex: validação de CNPJ e proteção de duplicidade de registros).
-- 🏢 **Gestão de Clientes:** Cadastro e controle de clientes com contato rápido via WhatsApp integrado.
-- 👷 **Gestão de Prestadores:** Gerenciamento de profissionais terceirizados, especialidades e disponibilidade de agenda.
-- 📄 **Contratos e Vínculos:** Criação de contratos firmados entre um Cliente e um Prestador.
-- 🛠️ **Ordens de Serviço (OS):** Emissão e acompanhamento de chamados vinculados diretamente a contratos existentes.
-- 🔍 **Auditoria Dinâmica:** Log detalhado de ações realizadas no sistema.
+O foco central da aplicação é fornecer uma infraestrutura de dados **rápida, segura e escalável** na nuvem, capaz de gerenciar entidades complexas (Clientes e Prestadores unidos por Contratos), aliada a uma interface visual premium (*Glassmorphism*) e de altíssima performance.
 
 ---
 
-## 💻 Tecnologias Utilizadas
+## ⚙️ Funcionalidades Principais
 
-### 1. Backend (API REST)
-A arquitetura do servidor foi construída aplicando rigorosamente os conceitos de engenharia de software e a **Arquitetura em Camadas** abordada nas aulas da disciplina de Linguagem de Programação do **Professor Felipe**. A separação de responsabilidades foi implementada seguindo o modelo:
+- 🔒 **Sistema de Autenticação Segura:** Login protegido com **JWT (JSON Web Tokens)** e senhas criptografadas com **Bcrypt** no banco de dados.
+- 🏢 **Gestão de Clientes:** Cadastro, validação restrita de CNPJ e controle de status de contratantes.
+- 👷 **Gestão de Prestadores:** Gerenciamento de profissionais terceirizados, especialidades e disponibilidade de agenda em tempo real.
+- 🤝 **Contratos Inteligentes:** Criação de vínculos contratuais entre um Cliente e um Prestador, calculando vigência e valores.
+- 📑 **Ordens de Serviço (OS):** Emissão e acompanhamento de chamados e manutenções vinculados diretamente a contratos ativos.
+- 🔍 **Auditoria Dinâmica:** Log automático de ações realizadas no sistema (Histórico de quem criou/alterou registros).
 
-- **Node.js + Express**
-- **Zod:** Implementação de _Schemas_ para validação forte de dados logo na entrada do sistema, garantindo que o banco de dados não receba lixo.
-- **Routes:** Definição clara de rotas (URLs e métodos HTTP).
-- **Controllers:** Camada responsável por adaptar o mundo HTTP, disparar a validação Zod e devolver respostas padronizadas em JSON com os respectivos *Status Codes*.
-- **Services:** Isolamento absoluto das regras de negócio (garantindo validações ativas de integridade e consultas prévias, como checagem de CNPJ duplicado).
-- **Repositories & Models:** Abstração do acesso aos dados via banco não relacional (Mongoose/MongoDB) e definição estrita das entidades do sistema.
-- **Tratamento de Erros (Middlewares):** Uso da classe `AppError` e de um *Error Handler Middleware* centralizado. Exceções são lançadas na camada de *Service* e formatadas elegantemente sem repetição de blocos *try/catch* confusos.
+---
 
-### 2. Frontend (Interface Web)
-Para complementar a API, construímos uma interface de usuário rica, rápida e sem o peso de frameworks externos, focando nos fundamentos da Web:
+## 🛠️ Arquitetura e Tecnologias
 
-- **HTML5 & CSS3 Vanilla**
-- **JavaScript ES6+:** Consumo assíncrono (`async/await`) e nativo (`fetch`) da nossa API REST para a renderização dinâmica do DOM (tabelas, modais, alertas).
-- **Design UI/UX:** Estilização moderna utilizando a técnica de *Glassmorphism* (elementos translúcidos), alertas customizados e tabelas totalmente responsivas com ordenação e paginação no lado do cliente.
-- **Segurança Nativa:** Uso da *Web Crypto API (SHA-256)* nativa do navegador para proteção de tráfego de senhas.
+### 1. Backend (O Motor do Sistema)
+O servidor foi construído aplicando rigorosamente o **Padrão Clean Architecture**, isolando lógicas de negócios e garantindo escalabilidade.
+
+- **Node.js, TypeScript e Express:** Construção da API RESTful com forte tipagem estática.
+- **Camadas Isoladas:** Separação rígida em `Routes`, `Controllers`, `Services`, e `Repositories` (Padrão SOLID).
+- **Zod:** Implementação de _Schemas_ para validação pesada de dados na entrada do sistema, garantindo integridade.
+- **Autenticação:** Proteção de rotas via `auth.middleware.ts` interceptando Tokens JWT.
+- **Mongoose & MongoDB Atlas:** Modelagem orientada a documentos na nuvem, utilizando relacionamentos complexos (`.populate()`) para amarrar Clientes e Prestadores.
+- **Swagger (Documentação Viva):** Documentação interativa na rota `/api-docs` para testes visuais rápidos com a funcionalidade "Try it out".
+
+### 2. Frontend (A Vitrine Estática)
+Uma interface de usuário rica, desenhada sem a dependência de frameworks compiladores (React/Angular), extraindo a máxima velocidade dos navegadores web:
+
+- **HTML5, CSS3 & JavaScript Vanilla (ES6+)**
+- **Interceptor de Rede (apiFetch):** Um wrapper customizado nativo que anexa automaticamente o crachá JWT de sessão no cabeçalho (*Authorization Bearer*) de todas as chamadas HTTP. Redirecionamento automático em caso de token expirado (Erro 401).
+- **Tratamento Avançado no Front:** Busca inteligente nas tabelas ignorando letras acentuadas e tradução dinâmica de status do banco de dados na tela de exibição.
+- **Design UI/UX Premium:** Estilização com *Glassmorphism*, tabelas responsivas, paginação no cliente e alertas personalizados.
 
 ---
 
 ## 🚀 Como Acessar e Executar
 
-### 🌐 Acesso Online (Recomendado)
-O projeto completo já está integrado e publicado na nuvem. Você pode testar o sistema ao vivo acessando o nosso link oficial:
+### 🌐 Acesso Online (Em Produção)
+O projeto completo possui uma arquitetura desacoplada na nuvem. Você pode testar o sistema ao vivo acessando o link oficial:
 
-👉 **[Acessar GVS Terceirizações (Netlify)](https://gvs-sistema.netlify.app)**
+🔗 **[Acessar Frontend GVS (Netlify)](https://gvs-sistema.netlify.app)**
 
- *(A API backend está hospedada gratuitamente no Render.com, o que significa que as primeiras requisições podem demorar alguns segundos para "acordar" o servidor).*
+ *(A API backend está hospedada gratuitamente no **Render.com**. Por ser um plano gratuito, as primeiras requisições do dia podem demorar alguns segundos para "acordar" o servidor).*
 
-### 💻 Execução Local (Modo Simples)
-Se você deseja inspecionar e rodar o front-end na sua máquina consumindo a API da nuvem:
+### 💻 Execução Local (Modo Offline)
+Se você deseja inspecionar ou rodar o backend localmente na sua máquina para a apresentação:
 ```bash
 # 1. Clone o repositório
 git clone https://github.com/lbpb293/PI_ADS_GVSterceirizacoes.git
 cd PI_ADS_GVSterceirizacoes
 
-# 2. Rode o Frontend
-# Abra o arquivo index.html (na raiz do projeto) no seu navegador ou utilize a extensão Live Server do VSCode.
-# NÃO é necessário instalar nenhuma dependência (npm install) e nem banco de dados! O front consome a API na nuvem.
-```
+# 2. Inicie a API Backend
+cd gvs-api
+npm install
+npm run dev
+# O servidor rodará na porta http://localhost:3000
 
-### 🔌 Execução 100% Offline (Modo Completo)
-Caso você não tenha internet no dia da apresentação, você pode rodar o backend inteirinho na sua máquina:
-1. Instale o **Node.js** e o **MongoDB Compass** (ou MongoDB Server) no seu computador.
-2. Dentro da pasta `gvs-api/`, crie um arquivo chamado `.env` e coloque a sua string de conexão local do MongoDB: `MONGO_URI=mongodb://localhost:27017/gvs`
-3. Abra o terminal na pasta `gvs-api` e instale as dependências: `npm install`
-4. Inicie o servidor local: `npm run dev` (A API vai rodar na porta 3000).
-5. No arquivo `app.js` (raiz do projeto), mude a primeira linha para: `const API_URL = 'http://localhost:3000/api';`
-6. Abra o `index.html` e o sistema estará rodando 100% offline no seu computador!
+# 3. Rode o Frontend
+# Abra o arquivo index.html (dentro da pasta raiz ou deploy-netlify) no seu navegador, ou utilize a extensão Live Server do VSCode.
+```
 
 ---
 
-## 👥 Equipe de Desenvolvimento
+## 🎓 Equipe de Desenvolvimento
 
 Projeto desenvolvido pelos alunos do **2º semestre de Análise e Desenvolvimento de Sistemas (ADS)** da **Faculdade de Tecnologia de Indaiatuba Dr. Archimedes Lammoglia**:
 
@@ -91,5 +86,5 @@ Projeto desenvolvido pelos alunos do **2º semestre de Análise e Desenvolviment
 
 ---
 <div align="center">
-  <small>Desenvolvido com dedicação para o Projeto Interdisciplinar</small>
+  <small>Desenvolvido para o Projeto Interdisciplinar</small>
 </div>
