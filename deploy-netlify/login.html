@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GVS Terceirizações</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.2), #0b1121 50%);
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: #ffffff; /* Modal todo branco */
+            color: #1e293b; /* Texto escuro */
+            padding: 40px;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .login-card img {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        .login-card label {
+            color: #475569;
+            font-weight: 500;
+        }
+        .login-card input.form-control {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+        }
+        .login-card input.form-control:focus {
+            border-color: #3b82f6;
+            background: #ffffff;
+        }
+        .error-msg {
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .password-reqs {
+            font-size: 11px;
+            color: #64748b;
+            text-align: left;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <img src="logo.png" alt="GVS Logo">
+        
+        <!-- Formulário de Login -->
+        <div id="login-section">
+            <h2 style="margin-bottom: 20px; color: #0f172a;">Acesso ao Sistema</h2>
+            <p class="error-msg" id="error-msg">E-mail ou senha incorretos.</p>
+            
+            <form id="login-form">
+                <div class="form-group" style="text-align: left;">
+                    <label>E-mail</label>
+                    <input type="email" id="username" class="form-control" required placeholder="admin@gvs.com">
+                </div>
+                <div class="form-group" style="text-align: left; margin-bottom: 5px;">
+                    <label>Senha</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 15px;">
+                    Entrar <i class='bx bx-log-in'></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Formulário de Troca de Senha Forçada -->
+        <div id="force-change-section" style="display: none;">
+            <h3 style="color: #0f172a; margin-bottom: 5px;">Atualização Obrigatória</h3>
+            <p style="font-size: 13px; color: #475569; margin-bottom: 20px;">
+                Você está usando a senha padrão. Por segurança, crie uma nova senha agora.
+            </p>
+            
+            <form id="change-pass-form">
+                <div class="form-group" style="text-align: left; margin-bottom: 5px;">
+                    <label>Nova Senha Segura</label>
+                    <input type="password" id="new-password" class="form-control" required 
+                           pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
+                           title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                </div>
+                <div class="password-reqs">
+                    Requisitos: Mín. 8 caracteres, 1 Maiúscula, 1 Número, 1 Caractere Especial (!@#$)
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; background: #10b981; border-color: #10b981;">
+                    Salvar e Acessar <i class='bx bx-check-shield'></i>
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' 
+            ? 'http://localhost:3000/api' 
+            : 'https://gvs-api.onrender.com/api';
+
+        // Se já tiver token salvo e válido, vai direto pro sistema
+        if (localStorage.getItem('gvs_token')) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('username').value;
+            const senha = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+            const btn = e.target.querySelector('button[type=submit]');
+
+            btn.disabled = true;
+            btn.innerHTML = 'Entrando...';
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Credenciais inválidas');
+                }
+
+                // Salva o token JWT e dados do usuário
+                localStorage.setItem('gvs_token', data.token);
+                localStorage.setItem('gvs_logged_user', data.usuario.nome);
+                localStorage.setItem('gvs_auth', 'true');
+
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorMsg.textContent = err.message || 'E-mail ou senha incorretos.';
+                errorMsg.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = "Entrar <i class='bx bx-log-in'></i>";
+            }
+        });
+    </script>
+</body>
+</html>

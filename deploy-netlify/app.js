@@ -2,8 +2,6 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
     ? 'http://localhost:3000/api' 
     : 'https://gvs-api.onrender.com/api';
 
-const ADMIN_HASH = "mock_hash_123";
-window.hashPassword = async function(pass) { return "hashed_" + pass; };
 
 // ============================================================
 // 🔒 AUTENTICAÇÃO JWT — Helper para enviar o token em toda chamada
@@ -1483,7 +1481,7 @@ async function submitForm(event, endpoint, id = null) {
 
         // Salvar na auditoria com Detalhes
         const entityName = endpoint === 'ordens-servico' ? 'OrdemServico' : endpoint.charAt(0).toUpperCase() + endpoint.slice(1);
-        const docId = id || savedData._id || savedData.id || "N/A";
+        const docId = id || savedData._id;
         if (docId) {
             await apiFetch(`${API_URL}/historico`, {
                 method: 'POST',

@@ -7,16 +7,16 @@ export const getProviderById = async (id: string) => {
   return p;
 };
 export const createProvider = async (data: any) => {
-  if (data.cpfCnpj) {
-    const existing = await ProviderRepository.findByCpfCnpj(data.cpfCnpj);
+  if (data.cpf_cnpj) {
+    const existing = await ProviderRepository.findByCpfCnpj(data.cpf_cnpj);
     if (existing) throw new AppError('CPF/CNPJ já cadastrado', 409);
   }
   return ProviderRepository.create(data);
 };
 export const updateProvider = async (id: string, data: any) => {
   await getProviderById(id);
-  if (data.cpfCnpj) {
-    const existing = await ProviderRepository.findByCpfCnpj(data.cpfCnpj);
+  if (data.cpf_cnpj) {
+    const existing = await ProviderRepository.findByCpfCnpj(data.cpf_cnpj);
     if (existing && existing._id.toString() !== id) throw new AppError('CPF/CNPJ já pertence a outro prestador', 409);
   }
   return ProviderRepository.update(id, data);
