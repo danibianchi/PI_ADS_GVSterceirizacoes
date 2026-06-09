@@ -115,8 +115,8 @@
             ? 'http://localhost:3000/api' 
             : 'https://gvs-api.onrender.com/api';
 
-        // Se já tiver token salvo e válido, vai direto pro sistema
-        if (localStorage.getItem('gvs_token')) {
+        // Só redireciona pro sistema se tiver AMBOS token e auth (sessão completa)
+        if (localStorage.getItem('gvs_token') && localStorage.getItem('gvs_auth') === 'true') {
             window.location.href = 'index.html';
         }
 
