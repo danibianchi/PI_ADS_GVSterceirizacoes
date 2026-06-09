@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 
 import authRoutes from './routes/auth.routes';
 import clientRoutes from './routes/client.routes';
@@ -28,9 +30,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// 📚 Documentação Swagger — acessível em /api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Rota de saúde pública (sem autenticação)
 app.get('/', (req, res) => {
-  res.json({ mensagem: 'API GVS Terceirizações funcionando! 🚀' });
+  res.json({ mensagem: 'API GVS Terceirizações funcionando! 🚀', docs: '/api-docs' });
 });
 
 // ✅ Rota de autenticação — PÚBLICA (não exige token)
