@@ -1555,6 +1555,8 @@ window.logout = function() {
     document.getElementById('user-dropdown').classList.remove('active');
     showConfirm('Tem certeza que deseja sair do painel de administração?', () => {
         localStorage.removeItem('gvs_auth');
+        localStorage.removeItem('gvs_token');
+        localStorage.removeItem('gvs_logged_user');
         window.location.href = 'login.html';
     });
 }
