@@ -14,8 +14,18 @@ import { errorHandler } from './middlewares/error-handler';
 
 const app = express();
 
-app.use(helmet());
-app.use(cors());
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permite file://, localhost e qualquer origem nula (file protocol)
+    if (!origin || origin === 'null' || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // em dev, libera tudo
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Rota de saúde pública (sem autenticação)

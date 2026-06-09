@@ -58,20 +58,81 @@ O projeto completo possui uma arquitetura desacoplada na nuvem. Você pode testa
 
 ### 💻 Execução Local (Modo Offline)
 Se você deseja inspecionar ou rodar o backend localmente na sua máquina para a apresentação:
+
+#### 📋 Pré-requisitos
+
+Antes de rodar, certifique-se de ter instalado:
+
+- **[Node.js](https://nodejs.org/)** (versão 18 ou superior)
+- **Banco de dados** — escolha uma das opções abaixo:
+
+| Opção | Quando usar | O que instalar |
+|---|---|---|
+| ☁️ **MongoDB Atlas** (recomendado) | Sem precisar instalar nada localmente | Nenhuma instalação — usa a nuvem |
+| 🖥️ **MongoDB Local** | Sem internet | [MongoDB Community Server](https://www.mongodb.com/try/download/community) |
+
+---
+
+#### ⚙️ Configuração do arquivo `.env`
+
+Dentro da pasta `gvs-api/`, existe um arquivo `.env` que define a conexão com o banco. Edite-o conforme sua escolha:
+
+**Opção 1 — Banco na nuvem (Atlas):** *(recomendado, sem instalação)*
+```env
+PORT=3000
+JWT_SECRET=gvs_jwt_secret_pi_2025_fatec
+MONGODB_URI=mongodb+srv://<usuario>:<senha>@<cluster>.mongodb.net/?appName=<nome-do-app>
+```
+
+**Opção 2 — Banco local (MongoDB instalado na máquina):**
+```env
+PORT=3000
+JWT_SECRET=gvs_jwt_secret_pi_2025_fatec
+MONGODB_URI=mongodb://127.0.0.1:27017/gvs_db
+```
+
+> ⚠️ Se optar pelo banco local, certifique-se de que o serviço do MongoDB está **em execução** antes de iniciar a API.
+
+---
+
+#### ▶️ Passo a passo
+
 ```bash
 # 1. Clone o repositório
 git clone https://github.com/lbpb293/PI_ADS_GVSterceirizacoes.git
 cd PI_ADS_GVSterceirizacoes
 
-# 2. Inicie a API Backend
+# 2. Configure o .env (veja acima)
 cd gvs-api
+# edite o arquivo .env com as configurações do banco desejado
+
+# 3. Instale as dependências e inicie a API
 npm install
 npm run dev
-# O servidor rodará na porta http://localhost:3000
-
-# 3. Rode o Frontend
-# Abra o arquivo index.html (dentro da pasta raiz ou deploy-netlify) no seu navegador, ou utilize a extensão Live Server do VSCode.
+# Aguarde as mensagens:
+# ✅ MongoDB conectado com sucesso!
+# 🚀 Servidor rodando em http://localhost:3000
 ```
+
+> 💡 Mantenha o terminal com `npm run dev` **aberto e rodando** enquanto usar o sistema. Se fechar, a API para.
+
+```bash
+# 4. Abra o Frontend
+# Abra o arquivo login.html no Chrome (duplo clique) ou via Live Server no VSCode.
+```
+
+---
+
+#### 🔑 Primeiro Acesso
+
+Use as credenciais abaixo para entrar no sistema:
+
+| Campo | Valor |
+|---|---|
+| **E-mail** | `admin@gvs.com` |
+| **Senha** | `Admin@123` |
+
+> 🔒 Recomendamos alterar a senha após o primeiro acesso, clicando no menu do usuário (canto inferior esquerdo) → **Alterar Senha**.
 
 ---
 
