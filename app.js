@@ -99,6 +99,7 @@ const navItems = document.querySelectorAll('.nav-item');
 const contentArea = document.getElementById('content-area');
 const pageTitle = document.getElementById('page-title');
 const btnNovo = document.getElementById('btn-novo');
+const btnExport = document.getElementById('btn-export');
 const searchContainer = document.getElementById('search-container');
 const searchInput = document.getElementById('search-input');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -290,12 +291,14 @@ async function renderRoute() {
     contentArea.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     btnNovo.style.display = 'none';
     searchContainer.style.display = 'block';
+    if(btnExport) btnExport.style.display = 'inline-flex';
 
     try {
         switch(currentRoute) {
             case 'dashboard':
                 pageTitle.textContent = 'Dashboard Overview';
                 searchContainer.style.display = 'none';
+                if(btnExport) btnExport.style.display = 'none';
                 await renderDashboard();
                 break;
             case 'clientes':
@@ -1546,14 +1549,13 @@ window.openConfigModal = function() {
     `);
 
     document.getElementById('form-change-pass').addEventListener('submit', (e) => {
-        e.preventDefault();
         const p1 = document.getElementById('cfg-new-pass').value;
         const p2 = document.getElementById('cfg-confirm-pass').value;
         if(p1 !== p2) {
+            e.preventDefault();
             showAlert('As senhas não coincidem!');
             return;
         }
-        localStorage.setItem('gvs_custom_pass', p1);
         showAlert('✅ Senha atualizada com sucesso no banco de dados!');
         closeModal();
     });
@@ -1572,3 +1574,47 @@ window.logout = function() {
 // Nota Integracao: O populate no backend substitui IDs por objetos em contratos e OS
 // Nota UI: Tabelas renderizadas com scroll horizontal ativo em index.css
 // Nota: Input mask implementado no HTML via JS nativo
+
+// Funcionalidade Avançada: Exportar para CSV
+window.exportToCSV = function() {
+    if(!window.filteredDataList || window.filteredDataList.length === 0) {
+        showAlert("Não há dados para exportar no momento.");
+        return;
+    }
+
+    // Pega os cabeçalhos a partir do primeiro objeto da lista, ignorando ids internos
+    const sample = window.filteredDataList[0];
+    const columns = Object.keys(sample).filter(key => !key.startsWith('_') && key !== 'pass' && key !== '__v');
+    
+    // \uFEFF força o Excel a ler acentos corretamente (BOM)
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+    
+    // Insere o cabeçalho, separado por ponto e vírgula para o Excel padrão pt-br
+    csvContent += columns.map(c => `"${c.toUpperCase()}"`).join(";") + "\r\n";
+    
+    // Insere as linhas (dados)
+    window.filteredDataList.forEach(row => {
+        let rowData = columns.map(col => {
+            let val = row[col];
+            // Transforma objetos (ex: clienteId aninhado) em texto e previne "null"
+            if(val === null || val === undefined) val = "";
+            else if(typeof val === 'object') {
+                val = val.nome || val.razao_social || val.username || JSON.stringify(val);
+            }
+            
+            // Escapa aspas para o formato CSV e remove quebras de linha
+            val = String(val).replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " "); 
+            return `"${val}"`;
+        });
+        csvContent += rowData.join(";") + "\r\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    // Cria um nome de arquivo inteligente baseado na tela (clientes, ordens, etc)
+    link.setAttribute("download", `GVS_Exportacao_${currentRoute}_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+};
