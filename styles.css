@@ -16,6 +16,17 @@
     --danger: #ef4444;
 }
 
+/* Modo Claro (Light Theme) */
+body.light-theme {
+    --bg-main: #f1f5f9;
+    --bg-sidebar: #ffffff;
+    --bg-panel: rgba(255, 255, 255, 0.9);
+    --border-color: rgba(0, 0, 0, 0.1);
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+}
+
 * {
     margin: 0;
     padding: 0;

@@ -1243,6 +1243,201 @@ window.editRecord = async function(id, type) {
                         <option value="concluida" ${record.status === 'concluida' ? 'selected' : ''}>Concluída</option>
                         <option value="cancelada" ${record.status === 'cancelada' ? 'selected' : ''}>Cancelada</option>
                     </select>
+    });
+}
+
+// Ação Rápida: Excluir
+window.deleteRecord = function(id, type) {
+    showConfirm('Tem certeza que deseja excluir este registro permanentemente?', async () => {
+        try {
+            if(type === 'usuarios') {
+                let users = window.getSystemUsers();
+                if(users.find(x => x._id === id)?.username === 'admin') {
+                    showAlert('Não é possível excluir o administrador mestre.');
+                    return;
+                }
+                users = users.filter(x => x._id !== id);
+                localStorage.setItem('gvs_users', JSON.stringify(users));
+                renderRoute();
+                return;
+            }
+
+            // Regra de Negócio (Kevin): Impedir exclusão se houver contrato vinculado
+            if (type === 'clientes' || type === 'prestadores') {
+                try {
+                    const resCont = await apiFetch(`${API_URL}/contratos`);
+                    const contratos = await resCont.json();
+                    
+                    const temContrato = contratos.some(c => {
+                        const cCliId = typeof c.clienteId === 'object' ? c.clienteId?._id : c.clienteId;
+                        const cPrestId = typeof c.prestadorId === 'object' ? c.prestadorId?._id : c.prestadorId;
+                        return cCliId === id || cPrestId === id;
+                    });
+
+                    if (temContrato) {
+                        showAlert('Acesso Negado: Este registro possui contratos vinculados e não pode ser excluído para manter a integridade do sistema.');
+                        return;
+                    }
+                } catch(e) {
+                    console.log('Erro ao checar contratos', e);
+                }
+            }
+
+            const response = await apiFetch(`${API_URL}/${type}/${id}`, {
+                method: 'DELETE'
+            });
+
+            if(!response.ok) throw new Error('Falha ao excluir registro');
+
+            const entityName = type === 'ordens-servico' ? 'OrdemServico' : type.charAt(0).toUpperCase() + type.slice(1);
+            await apiFetch(`${API_URL}/historico`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao: 'exclusao', entidade: entityName, documentoId: id, detalhes: {} })
+            }).catch(e => console.log('Erro ao salvar auditoria', e));
+
+            renderRoute();
+        } catch(err) {
+            showAlert(err.message);
+        }
+    });
+}
+
+// Global para abrir formulário de edição
+window.editRecord = async function(id, type) {
+    const record = window.currentDataList.find(r => r._id === id);
+    if(!record) return;
+
+    if (type === 'clientes') {
+        openModal('Editar Cliente', `
+            <form id="form-novo" onsubmit="submitForm(event, 'clientes', '${id}')">
+                <div class="form-group">
+                    <label>Razão Social</label>
+                    <input type="text" name="razao_social" value="${record.razao_social}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>CNPJ</label>
+                    <input type="text" name="cnpj" oninput="maskCNPJ(this)" value="${record.cnpj}" class="form-control" required placeholder="00.000.000/0000-00">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="${record.email}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" name="telefone" oninput="maskPhone(this)" value="${record.telefone}" class="form-control" required placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" class="form-control" required>
+                        <option value="ativo" ${record.status === 'ativo' ? 'selected' : ''}>Ativo</option>
+                        <option value="inativo" ${record.status === 'inativo' ? 'selected' : ''}>Inativo</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Cliente</button>
+            </form>
+        `);
+    } else if (type === 'prestadores') {
+        openModal('Editar Prestador', `
+            <form id="form-novo" onsubmit="submitForm(event, 'prestadores', '${id}')">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" name="nome" value="${record.nome}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>CPF/CNPJ</label>
+                    <input type="text" name="cpf_cnpj" oninput="maskCPF_CNPJ(this)" value="${record.cpf_cnpj}" class="form-control" required placeholder="000.000.000-00">
+                </div>
+                <div class="form-group">
+                    <label>Especialidade / Serviço</label>
+                    <input type="text" name="especialidade" value="${record.especialidade}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="${record.email}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" name="telefone" oninput="maskPhone(this)" value="${record.telefone}" class="form-control" required placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                    <label>Disponibilidade</label>
+                    <select name="disponivel" class="form-control" required>
+                        <option value="true" ${record.disponivel === true ? 'selected' : ''}>Disponível</option>
+                        <option value="false" ${record.disponivel === false ? 'selected' : ''}>Ocupado</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Prestador</button>
+            </form>
+        `);
+    } else if (type === 'contratos') {
+        const [resCli, resPrest] = await Promise.all([
+            apiFetch(`${API_URL}/clientes`), apiFetch(`${API_URL}/prestadores`)
+        ]);
+        const clientes = await resCli.json();
+        const prestadores = await resPrest.json();
+        
+        let cliOptions = clientes.map(c => `<option value="${c._id}" ${record.clienteId?._id === c._id ? 'selected' : ''}>${c.razao_social}</option>`).join('');
+        let prestOptions = prestadores.map(p => `<option value="${p._id}" ${record.prestadorId?._id === p._id ? 'selected' : ''}>${p.nome} (${p.especialidade})</option>`).join('');
+        
+        const valorMasked = "R$ " + (record.valor_acordado).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+        openModal('Editar Contrato', `
+            <form id="form-novo" onsubmit="submitForm(event, 'contratos', '${id}')">
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <select name="clienteId" class="form-control" required>${cliOptions}</select>
+                </div>
+                <div class="form-group">
+                    <label>Prestador</label>
+                    <select name="prestadorId" class="form-control" required>${prestOptions}</select>
+                </div>
+                <div class="form-group">
+                    <label>Valor Acordado</label>
+                    <input type="text" name="valor_acordado" oninput="maskCurrency(this)" value="${valorMasked}" class="form-control" required placeholder="R$ 0,00">
+                </div>
+                <div class="form-group">
+                    <label>Data de Início</label>
+                    <input type="date" name="data_inicio" value="${record.data_inicio ? record.data_inicio.split('T')[0] : ''}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Data de Término</label>
+                    <input type="date" name="data_fim" value="${record.data_fim ? record.data_fim.split('T')[0] : ''}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" class="form-control" required>
+                        <option value="ativo" ${record.status === 'ativo' ? 'selected' : ''}>Ativo</option>
+                        <option value="encerrado" ${record.status === 'encerrado' ? 'selected' : ''}>Encerrado</option>
+                        <option value="cancelado" ${record.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Contrato</button>
+            </form>
+        `);
+    } else if (type === 'ordens-servico') {
+        const resCont = await apiFetch(`${API_URL}/contratos`);
+        const contratos = await resCont.json();
+        let contOptions = contratos.map(c => `<option value="${c._id}" ${record.contratoId === c._id ? 'selected' : ''}>${c.clienteId?.razao_social || 'Contrato'} - ${c.valor_acordado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</option>`).join('');
+
+        openModal('Editar Ordem de Serviço', `
+            <form id="form-novo" onsubmit="submitForm(event, 'ordens-servico', '${id}')">
+                <div class="form-group">
+                    <label>Contrato Vinculado</label>
+                    <select name="contratoId" class="form-control" required>${contOptions}</select>
+                </div>
+                <div class="form-group">
+                    <label>Descrição da Atividade</label>
+                    <textarea name="descricao" class="form-control" rows="4" style="resize: vertical;" required>${record.descricao}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" class="form-control" required>
+                        <option value="pendente" ${record.status === 'pendente' ? 'selected' : ''}>Pendente</option>
+                        <option value="em andamento" ${record.status === 'em andamento' ? 'selected' : ''}>Em Andamento</option>
+                        <option value="concluida" ${record.status === 'concluida' ? 'selected' : ''}>Concluída</option>
+                        <option value="cancelada" ${record.status === 'cancelada' ? 'selected' : ''}>Cancelada</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Ordem</button>
             </form>
@@ -1250,14 +1445,11 @@ window.editRecord = async function(id, type) {
     } else if (type === 'usuarios') {
         openModal('Alterar Senha do Usuário', `
             <form id="form-novo" onsubmit="submitForm(event, 'usuarios', '${id}')">
-                <div class="form-group" style="text-align: left;">
-                    <label>Nova Senha para ${record.username}</label>
-                    <input type="password" name="pass" class="form-control" required 
-                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
-                           title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
-                </div>
-                <div style="font-size: 11px; color: var(--text-secondary); text-align: left; margin-bottom: 15px;">
-                    Requisitos: Mín. 8 caracteres, 1 Maiúscula, 1 Número, 1 Caractere Especial (!@#$)
+                <div class="form-group" style="text-align: left; margin-bottom: 5px; position: relative;">
+                    <label>Senha Segura (Mínimo 8 caracteres, 1 maiúscula, 1 número, 1 especial)</label>
+                    <input type="password" id="novo-user-pass-edit" name="pass" class="form-control" required style="padding-right: 40px;"
+                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}">
+                    <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('novo-user-pass-edit', this)"></i>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Senha</button>
             </form>
@@ -1378,11 +1570,11 @@ btnNovo.addEventListener('click', async () => {
                     <label>Nome de Usuário</label>
                     <input type="text" name="username" class="form-control" required>
                 </div>
-                <div class="form-group">
-                    <label>Senha Inicial</label>
-                    <input type="password" name="pass" class="form-control" required 
-                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
-                           title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                <div class="form-group" style="position: relative;">
+                    <label>Senha Inicial (Mín. 8 caracteres, 1 Maiúscula, 1 Número, 1 Especial)</label>
+                    <input type="password" id="novo-user-pass" name="pass" class="form-control" required style="padding-right: 40px;"
+                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}">
+                    <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('novo-user-pass', this)"></i>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Criar Usuário</button>
             </form>
@@ -1529,17 +1721,19 @@ window.openConfigModal = function() {
     document.getElementById('user-dropdown').classList.remove('active');
     openModal('Alterar Senha de Administrador', `
         <form id="form-change-pass">
-            <div class="form-group" style="text-align: left;">
+            <div class="form-group" style="text-align: left; position: relative;">
                 <label>Nova Senha</label>
-                <input type="password" id="cfg-new-pass" class="form-control" required 
+                <input type="password" id="cfg-new-pass" class="form-control" required style="padding-right: 40px;"
                        pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
                        title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('cfg-new-pass', this)"></i>
             </div>
-            <div class="form-group" style="text-align: left; margin-bottom: 5px;">
+            <div class="form-group" style="text-align: left; margin-bottom: 5px; position: relative;">
                 <label>Confirmar Nova Senha</label>
-                <input type="password" id="cfg-confirm-pass" class="form-control" required 
+                <input type="password" id="cfg-confirm-pass" class="form-control" required style="padding-right: 40px;"
                        pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
                        title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('cfg-confirm-pass', this)"></i>
             </div>
             <div style="font-size: 11px; color: var(--text-secondary); text-align: left; margin-bottom: 15px;">
                 Requisitos: Mín. 8 caracteres, 1 Maiúscula, 1 Número, 1 Caractere Especial (!@#$)
@@ -1618,3 +1812,37 @@ window.exportToCSV = function() {
     link.click();
     link.remove();
 };
+
+// Funcionalidade Avançada: Mostrar/Ocultar Senha
+window.togglePwd = function(id, icon) {
+    const el = document.getElementById(id);
+    if(el.type === 'password') {
+        el.type = 'text';
+        icon.classList.remove('bx-hide');
+        icon.classList.add('bx-show');
+    } else {
+        el.type = 'password';
+        icon.classList.remove('bx-show');
+        icon.classList.add('bx-hide');
+    }
+};
+
+// Funcionalidade Avançada: Tema Claro / Escuro
+window.toggleTheme = function() {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    localStorage.setItem('gvs_theme', isLight ? 'light' : 'dark');
+    const btn = document.getElementById('theme-toggle-btn');
+    if(btn) {
+        btn.innerHTML = isLight ? "<i class='bx bx-moon'></i> Modo Escuro" : "<i class='bx bx-sun'></i> Modo Claro";
+    }
+};
+
+// Aplica a preferência do usuário ao carregar a página
+window.addEventListener('DOMContentLoaded', () => {
+    if(localStorage.getItem('gvs_theme') === 'light') {
+        document.body.classList.add('light-theme');
+        const btn = document.getElementById('theme-toggle-btn');
+        if(btn) btn.innerHTML = "<i class='bx bx-moon'></i> Modo Escuro";
+    }
+});
