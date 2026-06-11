@@ -1441,75 +1441,83 @@ async function submitForm(event, endpoint, id = null) {
 
     if(data.disponivel) data.disponivel = data.disponivel === 'true';
 
-    if(endpoint === 'usuarios') {
-        let users = window.getSystemUsers();
-        if(id) {
-            let u = users.find(x => x._id === id);
-            if(u) u.pass = await hashPassword(data.pass);
-        } else {
-            if(users.find(u => u.username === data.username)) {
-                showAlert('Este nome de usuário já existe!');
-                return;
+    const executeSave = async () => {
+        if(endpoint === 'usuarios') {
+            let users = window.getSystemUsers();
+            if(id) {
+                let u = users.find(x => x._id === id);
+                if(u) u.pass = await hashPassword(data.pass);
+            } else {
+                if(users.find(u => u.username === data.username)) {
+                    showAlert('Este nome de usuário já existe!');
+                    return;
+                }
+                users.push({
+                    _id: 'u' + Date.now(),
+                    username: data.username,
+                    pass: await hashPassword(data.pass),
+                    status: 'ativo'
+                });
             }
-            users.push({
-                _id: 'u' + Date.now(),
-                username: data.username,
-                pass: await hashPassword(data.pass),
-                status: 'ativo'
-            });
-        }
-        localStorage.setItem('gvs_users', JSON.stringify(users));
-        closeModal();
-        renderRoute();
-        return;
-    }
-
-    try {
-        const btn = form.querySelector('button');
-        btn.textContent = 'Salvando...';
-        btn.disabled = true;
-
-        const url = id ? `${API_URL}/${endpoint}/${id}` : `${API_URL}/${endpoint}`;
-        const method = id ? 'PUT' : 'POST';
-
-        const response = await apiFetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        const savedData = await response.json();
-        
-        if (!response.ok) {
-            // Se for erro do Zod (array de detalhes), mostra o primeiro erro detalhado
-            if (savedData.detalhes && savedData.detalhes.length > 0) {
-                throw new Error(`${savedData.erro}: ${savedData.detalhes[0].mensagem}`);
-            }
-            throw new Error(savedData.erro || savedData.message || savedData.error || 'Erro ao comunicar com o servidor.');
+            localStorage.setItem('gvs_users', JSON.stringify(users));
+            closeModal();
+            renderRoute();
+            return;
         }
 
-        // Salvar na auditoria com Detalhes
-        const entityName = endpoint === 'ordens-servico' ? 'OrdemServico' : endpoint.charAt(0).toUpperCase() + endpoint.slice(1);
-        const docId = id || savedData._id || savedData.id || "N/A";
-        if (docId) {
-            await apiFetch(`${API_URL}/historico`, {
-                method: 'POST',
+        try {
+            const btn = form.querySelector('button');
+            btn.textContent = 'Salvando...';
+            btn.disabled = true;
+
+            const url = id ? `${API_URL}/${endpoint}/${id}` : `${API_URL}/${endpoint}`;
+            const method = id ? 'PUT' : 'POST';
+
+            const response = await apiFetch(url, {
+                method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    acao: id ? 'atualizacao' : 'criacao',
-                    entidade: entityName,
-                    documentoId: docId,
-                    detalhes: data
-                })
-            }).catch(e => console.log('Erro ao salvar auditoria', e));
+                body: JSON.stringify(data)
+            });
+
+            const savedData = await response.json();
+            
+            if (!response.ok) {
+                // Se for erro do Zod (array de detalhes), mostra o primeiro erro detalhado
+                if (savedData.detalhes && savedData.detalhes.length > 0) {
+                    throw new Error(`${savedData.erro}: ${savedData.detalhes[0].mensagem}`);
+                }
+                throw new Error(savedData.erro || savedData.message || savedData.error || 'Erro ao comunicar com o servidor.');
+            }
+
+            // Salvar na auditoria com Detalhes
+            const entityName = endpoint === 'ordens-servico' ? 'OrdemServico' : endpoint.charAt(0).toUpperCase() + endpoint.slice(1);
+            const docId = id || savedData._id || savedData.id || "N/A";
+            if (docId) {
+                await apiFetch(`${API_URL}/historico`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        acao: id ? 'atualizacao' : 'criacao',
+                        entidade: entityName,
+                        documentoId: docId,
+                        detalhes: data
+                    })
+                }).catch(e => console.log('Erro ao salvar auditoria', e));
+            }
+            
+            closeModal();
+            renderRoute(); 
+        } catch (error) {
+            showAlert(error.message);
+            form.querySelector('button').disabled = false;
+            form.querySelector('button').textContent = 'Tentar Novamente';
         }
-        
-        closeModal();
-        renderRoute(); 
-    } catch (error) {
-        showAlert(error.message);
-        form.querySelector('button').disabled = false;
-        form.querySelector('button').textContent = 'Tentar Novamente';
+    };
+
+    if (id) {
+        showConfirm('Tem certeza que deseja salvar as alterações?', executeSave);
+    } else {
+        executeSave();
     }
 }
 
