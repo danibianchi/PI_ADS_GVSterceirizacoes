@@ -85,11 +85,11 @@
                     <button class="btn-icon" title="Voltar" onclick="goBack()"><i class='bx bx-arrow-back'></i></button>
                     <h1 id="page-title">Dashboard</h1>
                 </div>
-                <div class="header-actions" style="display: flex; gap: 15px; align-items: center;">
-                    <div class="search-container" id="search-container" style="display: none; position: relative;">
+                <div class="header-actions" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div class="search-container" id="search-container" style="display: none; align-items: center; gap: 10px; position: relative;">
                         <i class='bx bx-search' style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
                         <input type="text" id="search-input" class="form-control" placeholder="Pesquisar..." style="padding-left: 35px; width: 200px; background: rgba(0,0,0,0.3);" oninput="applyFilters()">
-                        <select id="status-filter" class="form-control" style="margin-left: 10px; width: auto; display: inline-block; background: rgba(0,0,0,0.3);" onchange="applyFilters()">
+                        <select id="status-filter" class="form-control" style="width: auto; background: rgba(0,0,0,0.3);" onchange="applyFilters()">
                             <option value="todos">Todos os Status</option>
                             <option value="ativo">Ativos / Disponíveis</option>
                             <option value="inativo">Inativos / Indisponíveis</option>

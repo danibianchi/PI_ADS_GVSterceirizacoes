@@ -189,6 +189,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 #page-title {
@@ -472,7 +474,9 @@ select.form-control option {
         display: flex !important;
     }
     .header-actions {
-        margin-left: auto;
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
     }
 }
 

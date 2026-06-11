@@ -290,7 +290,7 @@ window.applyFilters = function() {
 async function renderRoute() {
     contentArea.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     btnNovo.style.display = 'none';
-    searchContainer.style.display = 'block';
+    searchContainer.style.display = 'flex';
     if(btnExport) btnExport.style.display = 'inline-flex';
 
     try {
