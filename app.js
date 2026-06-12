@@ -553,8 +553,7 @@ async function renderClientes(fetchData = true) {
             <thead>
                 <tr>
                     <th style="cursor: pointer;" onclick="sortData('razao_social', 'clientes')">Razão Social ${getSortIcon('razao_social')}</th>
-                    <th style="cursor: pointer;" onclick="sortData('cnpj', 'clientes')">CNPJ ${getSortIcon('cnpj')}</th>
-                    <th style="cursor: pointer;" onclick="sortData('email', 'clientes')">Email ${getSortIcon('email')}</th>
+                    <th style="cursor: pointer; width: 60px; text-align: center;" onclick="sortData('email', 'clientes')"><i class='bx bx-envelope' style="font-size: 18px;" title="E-mail"></i> ${getSortIcon('email')}</th>
                     <th style="cursor: pointer; width: 180px;" onclick="sortData('telefone', 'clientes')">Telefone ${getSortIcon('telefone')}</th>
                     <th style="cursor: pointer;" onclick="sortData('status', 'clientes')">Status ${getSortIcon('status')}</th>
                     <th>Ações</th>
@@ -564,7 +563,7 @@ async function renderClientes(fetchData = true) {
     `;
 
     if (window.filteredDataList.length === 0) {
-        html += `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
+        html += `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
     const start = (window.currentPage - 1) * window.itemsPerPage;
@@ -575,8 +574,9 @@ async function renderClientes(fetchData = true) {
         html += `
             <tr>
                 <td><strong>${c.razao_social}</strong></td>
-                <td>${c.cnpj}</td>
-                <td>${c.email}</td>
+                <td style="text-align: center;">
+                    ${c.email ? `<a href="mailto:${c.email}" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(59,130,246,0.1); border-radius: 50%; transition: all 0.2s;" title="Enviar e-mail para ${c.email}" onmouseover="this.style.transform='scale(1.1)'; this.style.background='var(--primary)'; this.style.color='white';" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--primary)';"><i class='bx bx-envelope' style="font-size: 18px;"></i></a>` : '-'}
+                </td>
                 <td style="white-space: nowrap; width: 180px;">
                     <a href="https://wa.me/55${c.telefone.replace(/\D/g, '')}" target="_blank" style="color: #25D366; text-decoration: none; display: flex; align-items: center; gap: 5px; font-weight: 500;" title="Abrir no WhatsApp">
                         <i class='bx bxl-whatsapp' style="font-size: 18px;"></i> ${c.telefone}
@@ -616,7 +616,6 @@ async function renderPrestadores(fetchData = true) {
             <thead>
                 <tr>
                     <th style="cursor: pointer; max-width: 150px;" onclick="sortData('nome', 'prestadores')">Nome ${getSortIcon('nome')}</th>
-                    <th style="cursor: pointer;" onclick="sortData('cpf_cnpj', 'prestadores')">CPF/CNPJ ${getSortIcon('cpf_cnpj')}</th>
                     <th style="cursor: pointer;" onclick="sortData('especialidade', 'prestadores')">Especialidade ${getSortIcon('especialidade')}</th>
                     <th style="cursor: pointer; width: 180px;" onclick="sortData('telefone', 'prestadores')">Telefone ${getSortIcon('telefone')}</th>
                     <th style="cursor: pointer;" onclick="sortData('disponivel', 'prestadores')">Status ${getSortIcon('disponivel')}</th>
@@ -627,7 +626,7 @@ async function renderPrestadores(fetchData = true) {
     `;
 
     if (window.filteredDataList.length === 0) {
-        html += `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
+        html += `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
     const start = (window.currentPage - 1) * window.itemsPerPage;
@@ -639,7 +638,6 @@ async function renderPrestadores(fetchData = true) {
         html += `
             <tr>
                 <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.nome}"><strong>${p.nome}</strong></td>
-                <td>${p.cpf_cnpj}</td>
                 <td>${p.especialidade}</td>
                 <td style="white-space: nowrap; width: 180px;">
                     <a href="https://wa.me/55${p.telefone.replace(/\D/g, '')}" target="_blank" style="color: #25D366; text-decoration: none; display: flex; align-items: center; gap: 5px; font-weight: 500;" title="Abrir no WhatsApp">
