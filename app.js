@@ -668,8 +668,14 @@ async function renderPrestadores(fetchData = true) {
 
 async function renderContratos(fetchData = true) {
     if(fetchData) {
-        const response = await apiFetch(`${API_URL}/contratos`);
-        window.currentDataList = await response.json();
+        const [resCont, resCli, resPrest] = await Promise.all([
+            apiFetch(`${API_URL}/contratos`), 
+            apiFetch(`${API_URL}/clientes`), 
+            apiFetch(`${API_URL}/prestadores`)
+        ]);
+        window.currentDataList = await resCont.json();
+        window.clientesCache = await resCli.json();
+        window.prestadoresCache = await resPrest.json();
         window.filteredDataList = [...window.currentDataList];
         window.currentPage = 1;
     }
@@ -683,7 +689,6 @@ async function renderContratos(fetchData = true) {
                     <th style="cursor: pointer;" onclick="sortData('cliente.razao_social', 'contratos')">Cliente ${getSortIcon('cliente.razao_social')}</th>
                     <th style="cursor: pointer;" onclick="sortData('prestador.nome', 'contratos')">Prestador ${getSortIcon('prestador.nome')}</th>
                     <th style="cursor: pointer;" onclick="sortData('data_inicio', 'contratos')">Início ${getSortIcon('data_inicio')}</th>
-                    <th style="cursor: pointer;" onclick="sortData('valor_acordado', 'contratos')">Valor ${getSortIcon('valor_acordado')}</th>
                     <th style="cursor: pointer;" onclick="sortData('status', 'contratos')">Status ${getSortIcon('status')}</th>
                     <th>Ações</th>
                 </tr>
@@ -692,19 +697,23 @@ async function renderContratos(fetchData = true) {
     `;
 
     if (window.filteredDataList.length === 0) {
-        html += `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
+        html += `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum registro encontrado.</td></tr>`;
     }
 
     const start = (window.currentPage - 1) * window.itemsPerPage;
     const paginatedData = window.filteredDataList.slice(start, start + window.itemsPerPage);
 
     paginatedData.forEach(c => {
-        const cliObj = c.cliente || c.clienteId;
-        const prestObj = c.prestador || c.prestadorId;
-        const clienteNome = cliObj?.razao_social || 'Desconhecido';
-        const prestadorNome = prestObj?.nome || 'Desconhecido';
+        const cliId = typeof c.cliente === 'object' && c.cliente !== null ? (c.cliente._id || c.cliente.id) : (c.cliente || c.clienteId);
+        const cliObj = window.clientesCache?.find(x => x._id === cliId) || c.cliente || c.clienteId;
+        
+        const prestId = typeof c.prestador === 'object' && c.prestador !== null ? (c.prestador._id || c.prestador.id) : (c.prestador || c.prestadorId);
+        const prestObj = window.prestadoresCache?.find(x => x._id === prestId) || c.prestador || c.prestadorId;
+
+        const clienteNome = typeof cliObj === 'object' && cliObj !== null ? (cliObj.razao_social || cliObj.nome || 'Desconhecido') : 'Desconhecido';
+        const prestadorNome = typeof prestObj === 'object' && prestObj !== null ? (prestObj.nome || prestObj.razao_social || 'Desconhecido') : 'Desconhecido';
+        
         const data = new Date(c.data_inicio).toLocaleDateString('pt-BR');
-        const valorFormatado = c.valor_acordado.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
         const isAtivo = c.status === 'ativo';
         const statusDisplay = isAtivo ? 'Ativo' : 'Encerrado';
         
@@ -714,7 +723,6 @@ async function renderContratos(fetchData = true) {
                 <td><strong>${clienteNome}</strong></td>
                 <td>${prestadorNome}</td>
                 <td>${data}</td>
-                <td>${valorFormatado}</td>
                 <td><span class="status-badge status-${c.status}">${statusDisplay}</span></td>
                 <td>
                     <div style="display: flex; gap: 8px;">
@@ -777,11 +785,16 @@ window.viewOrderDetails = function(id) {
 
 async function renderOrdens(fetchData = true) {
     if(fetchData) {
-        const response = await apiFetch(`${API_URL}/ordens-servico`);
-        window.currentDataList = await response.json();
-        
-        const resCont = await apiFetch(`${API_URL}/contratos`);
+        const [resOS, resCont, resCli, resPrest] = await Promise.all([
+            apiFetch(`${API_URL}/ordens-servico`),
+            apiFetch(`${API_URL}/contratos`),
+            apiFetch(`${API_URL}/clientes`),
+            apiFetch(`${API_URL}/prestadores`)
+        ]);
+        window.currentDataList = await resOS.json();
         const contratos = await resCont.json();
+        window.clientesCache = await resCli.json();
+        window.prestadoresCache = await resPrest.json();
         
         window.currentDataList.forEach(o => {
             const contratoRef = o.contratoId || o.contrato;
@@ -799,8 +812,17 @@ async function renderOrdens(fetchData = true) {
                 cPrest = contratoRef.prestador || contratoRef.prestadorId;
             }
 
-            o.solicitante = typeof cCli === 'object' && cCli !== null ? (cCli.razao_social || cCli.nome || 'Desconhecido') : 'Desconhecido';
-            o.executor = typeof cPrest === 'object' && cPrest !== null ? (cPrest.nome || cPrest.razao_social || 'Desconhecido') : 'Desconhecido';
+            const cliId = typeof cCli === 'object' && cCli !== null ? (cCli._id || cCli.id) : cCli;
+            const prestId = typeof cPrest === 'object' && cPrest !== null ? (cPrest._id || cPrest.id) : cPrest;
+
+            const cliArr = Array.isArray(window.clientesCache) ? window.clientesCache : [];
+            const prestArr = Array.isArray(window.prestadoresCache) ? window.prestadoresCache : [];
+
+            const cliObj = cliArr.find(x => x._id === cliId) || cCli;
+            const prestObj = prestArr.find(x => x._id === prestId) || cPrest;
+
+            o.solicitante = typeof cliObj === 'object' && cliObj !== null ? (cliObj.razao_social || cliObj.nome || 'Desconhecido') : 'Desconhecido';
+            o.executor = typeof prestObj === 'object' && prestObj !== null ? (prestObj.nome || prestObj.razao_social || 'Desconhecido') : 'Desconhecido';
         });
         
         window.filteredDataList = [...window.currentDataList];
