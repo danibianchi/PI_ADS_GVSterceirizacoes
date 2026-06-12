@@ -839,6 +839,7 @@ async function renderOrdens(fetchData = true) {
                 <td><span class="status-badge status-${badgeColor}">${o.status.toUpperCase()}</span></td>
                 <td>
                     <div style="display: flex; gap: 8px;">
+                        <button class="btn-icon" title="Imprimir Recibo" onclick="printOrder('${o._id}')"><i class='bx bx-printer'></i></button>
                         <button class="btn-icon" title="Ver Detalhes" onclick="viewOrderDetails('${o._id}')"><i class='bx bx-info-circle'></i></button>
                         <button class="btn-icon" title="Editar" onclick="editRecord('${o._id}', 'ordens-servico')"><i class='bx bx-edit'></i></button>
                         <button class="btn-icon" title="${isConcluida ? 'Reabrir' : 'Concluir'}" onclick="toggleStatus('${o._id}', 'ordens-servico', '${o.status}')">
@@ -1243,7 +1244,14 @@ window.editRecord = async function(id, type) {
                         <option value="concluida" ${record.status === 'concluida' ? 'selected' : ''}>Concluída</option>
                         <option value="cancelada" ${record.status === 'cancelada' ? 'selected' : ''}>Cancelada</option>
                     </select>
-    });
+                </div>
+                <div class="form-actions" style="margin-top: 20px; text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        `);
+    }
 }
 
 // Ação Rápida: Excluir
@@ -1845,4 +1853,154 @@ window.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('theme-toggle-btn');
         if(btn) btn.innerHTML = "<i class='bx bx-moon'></i> Modo Escuro";
     }
+});
+
+// Funcionalidade Avançada: Imprimir Ordem de Serviço (PDF)
+window.printOrder = async function(id) {
+    const o = window.currentDataList.find(x => x._id === id);
+    if(!o) return;
+
+    const dataExecucao = new Date(o.data_execucao).toLocaleDateString('pt-BR');
+    const badgeColor = o.status === 'pendente' ? '#f59e0b' : (o.status === 'concluida' ? '#10b981' : '#ef4444');
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if(!printWindow) {
+        showAlert('Por favor, permita pop-ups no seu navegador para gerar o recibo.');
+        return;
+    }
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Impressão - Ordem de Serviço #${o._id.substring(o._id.length - 4).toUpperCase()}</title>
+            <style>
+                body { font-family: 'Arial', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+                .logo { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+                .logo span { color: #3b82f6; }
+                .subtitle { font-size: 14px; color: #666; }
+                .title { text-align: center; font-size: 24px; margin-bottom: 30px; font-weight: bold; }
+                .info-box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+                .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                .label { font-weight: bold; color: #555; }
+                .desc-box { background: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 4px solid #3b82f6; margin-top: 20px; min-height: 100px; }
+                .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
+                .signature { margin-top: 80px; display: flex; justify-content: space-around; }
+                .signature-line { width: 40%; border-top: 1px solid #333; text-align: center; padding-top: 5px; font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">GVS <span>Terceirizações</span></div>
+                <div class="subtitle">Excelência em Gestão de Serviços</div>
+            </div>
+            
+            <div class="title">FICHA DE ORDEM DE SERVIÇO</div>
+            
+            <div class="info-box">
+                <div class="info-row">
+                    <span class="label">Nº da Ordem:</span>
+                    <span>#OS-${o._id.substring(o._id.length - 4).toUpperCase()}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Data de Execução:</span>
+                    <span>${dataExecucao}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Status:</span>
+                    <span style="color: ${badgeColor}; font-weight: bold;">${o.status.toUpperCase()}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Cliente Solicitante:</span>
+                    <span>${o.solicitante || 'Não Informado'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Prestador Responsável:</span>
+                    <span>${o.executor || 'Não Informado'}</span>
+                </div>
+            </div>
+
+            <div class="label">Descrição da Atividade:</div>
+            <div class="desc-box">
+                ${o.descricao.replace(/\\n/g, '<br>')}
+            </div>
+
+            <div class="signature">
+                <div class="signature-line">Assinatura do Prestador</div>
+                <div class="signature-line">Assinatura do Cliente Solicitante</div>
+            </div>
+
+            <div class="footer">
+                Documento gerado pelo sistema GVS Terceirizações em ${new Date().toLocaleString('pt-BR')}
+            </div>
+            
+            <script>
+                window.onload = function() {
+                    window.print();
+                    setTimeout(function() { window.close(); }, 500);
+                }
+            </script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+};
+
+// Funcionalidade Avançada: Sistema de Notificações Inteligentes
+window.checkNotifications = async function() {
+    try {
+        const response = await apiFetch(`${API_URL}/contratos`);
+        const contratos = await response.json();
+        
+        const hoje = new Date();
+        const trintaDias = new Date();
+        trintaDias.setDate(hoje.getDate() + 30);
+        
+        let alertas = [];
+        contratos.forEach(c => {
+            if(c.data_fim && c.status === 'ativo') {
+                const fim = new Date(c.data_fim);
+                fim.setHours(fim.getHours() + 3); 
+                
+                if(fim < hoje) {
+                    alertas.push(`🔴 <b>VENCIDO:</b> Contrato de ${c.valor_acordado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} (Venceu em ${fim.toLocaleDateString('pt-BR')})`);
+                } else if(fim <= trintaDias) {
+                    alertas.push(`🟡 <b>ATENÇÃO:</b> Contrato de ${c.valor_acordado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} (Vence em ${fim.toLocaleDateString('pt-BR')})`);
+                }
+            }
+        });
+
+        window.currentNotifications = alertas;
+        const badge = document.getElementById('notification-badge');
+        if(badge) {
+            if(alertas.length > 0) {
+                badge.style.display = 'block';
+                badge.textContent = alertas.length > 9 ? '9+' : alertas.length;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch(err) {
+        console.log("Erro ao checar notificações", err);
+    }
+};
+
+window.showNotifications = function() {
+    if(!window.currentNotifications || window.currentNotifications.length === 0) {
+        showAlert('✅ Tudo certo! Nenhum contrato vencido ou vencendo em breve no momento.');
+        return;
+    }
+    
+    let htmlMsg = '<div style="text-align: left;"><ul style="padding-left: 20px; color: var(--text-primary); list-style-type: none; margin-left: 0; padding-left: 0;">';
+    window.currentNotifications.forEach(msg => {
+        htmlMsg += `<li style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">${msg}</li>`;
+    });
+    htmlMsg += '</ul></div>';
+    
+    openModal('Alertas de Contrato 🔔', htmlMsg);
+};
+
+// Dispara a checagem 3 segundos após a tela carregar
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(checkNotifications, 3000);
 });
