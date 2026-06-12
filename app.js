@@ -320,6 +320,12 @@ async function renderRoute() {
                 btnNovo.style.display = 'inline-flex';
                 await renderOrdens();
                 break;
+            case 'agenda':
+                pageTitle.textContent = 'Agenda Geral (FullCalendar)';
+                searchContainer.style.display = 'none';
+                if(btnExport) btnExport.style.display = 'none';
+                await renderAgenda();
+                break;
             case 'historico':
                 pageTitle.textContent = 'Auditoria do Sistema';
                 await renderHistorico();
@@ -537,6 +543,87 @@ async function renderDashboard() {
             }
         }
     });
+}
+
+async function renderAgenda() {
+    contentArea.innerHTML = `<div id="agenda-calendar-container" class="glass-panel" style="padding: 20px; min-height: 600px; background: rgba(0,0,0,0.2);"></div>`;
+    
+    const [resOS, resCont, resCli, resPrest] = await Promise.all([
+        apiFetch(`${API_URL}/ordens-servico`),
+        apiFetch(`${API_URL}/contratos`),
+        apiFetch(`${API_URL}/clientes`),
+        apiFetch(`${API_URL}/prestadores`)
+    ]);
+    
+    const ordens = await resOS.json();
+    const contratos = await resCont.json();
+    const clientes = await resCli.json();
+    const prestadores = await resPrest.json();
+    
+    // Alimenta a lista atual para que o modal de detalhes funcione ao clicar
+    window.currentDataList = ordens;
+    
+    const events = ordens.map(o => {
+        const contratoRef = o.contratoId || o.contrato;
+        const cId = typeof contratoRef === 'object' && contratoRef !== null ? (contratoRef._id || contratoRef.id) : contratoRef;
+        const contrato = contratos.find(c => c._id === cId || c.id === cId);
+        
+        let cPrest = null;
+        let cCli = null;
+        if (contrato) {
+            cPrest = contrato.prestador || contrato.prestadorId;
+            cCli = contrato.cliente || contrato.clienteId;
+        } else if (typeof contratoRef === 'object' && contratoRef !== null) {
+            cPrest = contratoRef.prestador || contratoRef.prestadorId;
+            cCli = contratoRef.cliente || contratoRef.clienteId;
+        }
+        
+        const prestId = typeof cPrest === 'object' && cPrest !== null ? (cPrest._id || cPrest.id) : cPrest;
+        const cliId = typeof cCli === 'object' && cCli !== null ? (cCli._id || cCli.id) : cCli;
+        
+        const prestObj = prestadores.find(x => x._id === prestId) || cPrest;
+        const cliObj = clientes.find(x => x._id === cliId) || cCli;
+        
+        const prestadorNome = typeof prestObj === 'object' && prestObj !== null ? (prestObj.nome || prestObj.razao_social || 'Desconhecido') : 'Desconhecido';
+        const clienteNome = typeof cliObj === 'object' && cliObj !== null ? (cliObj.razao_social || cliObj.nome || 'Desconhecido') : 'Desconhecido';
+
+        o.solicitante = clienteNome;
+        o.executor = prestadorNome;
+
+        let color = '#3b82f6';
+        if (o.status === 'concluida') color = '#10b981';
+        if (o.status === 'cancelada') color = '#ef4444';
+        if (o.status === 'em andamento') color = '#f59e0b';
+        
+        const dateIso = o.data_execucao ? o.data_execucao.split('T')[0] : '';
+        
+        return {
+            title: `${prestadorNome} (OS-${o._id.substring(o._id.length-4).toUpperCase()})`,
+            start: dateIso,
+            color: color,
+            extendedProps: { id: o._id }
+        };
+    }).filter(e => e.start);
+    
+    const calendarEl = document.getElementById('agenda-calendar-container');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'pt-br',
+        themeSystem: 'standard',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        events: events,
+        eventClick: function(info) {
+            if (window.viewOrderDetails) {
+                window.viewOrderDetails(info.event.extendedProps.id);
+            }
+        }
+    });
+    
+    calendar.render();
 }
 
 async function renderClientes(fetchData = true) {
