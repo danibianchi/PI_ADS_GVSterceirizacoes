@@ -1,6 +1,5 @@
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' 
-    ? 'http://localhost:3000/api' 
-    : 'https://gvs-api.onrender.com/api';
+// Força o uso da API em nuvem (Render) para evitar travamentos locais se o backend não estiver rodando
+const API_URL = 'https://gvs-api.onrender.com/api';
 
 const ADMIN_HASH = "mock_hash_123";
 window.hashPassword = async function(pass) { return "hashed_" + pass; };
