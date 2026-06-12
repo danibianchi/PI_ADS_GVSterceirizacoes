@@ -654,7 +654,7 @@ async function renderClientes(fetchData = true) {
             <thead>
                 <tr>
                     <th style="cursor: pointer; max-width: 200px;" onclick="sortData('razao_social', 'clientes')">Razão Social ${getSortIcon('razao_social')}</th>
-                    <th style="cursor: pointer; width: 60px; text-align: center;" onclick="sortData('email', 'clientes')">Email ${getSortIcon('email')}</th>
+                    <th style="cursor: pointer; width: 100px; text-align: center; white-space: nowrap;" onclick="sortData('email', 'clientes')">Email ${getSortIcon('email')}</th>
                     <th style="cursor: pointer; width: 180px;" onclick="sortData('telefone', 'clientes')">Telefone ${getSortIcon('telefone')}</th>
                     <th style="cursor: pointer;" onclick="sortData('status', 'clientes')">Status ${getSortIcon('status')}</th>
                     <th>Ações</th>
