@@ -784,17 +784,23 @@ async function renderOrdens(fetchData = true) {
         const contratos = await resCont.json();
         
         window.currentDataList.forEach(o => {
-            const cId = typeof o.contratoId === 'object' ? o.contratoId?._id : o.contratoId;
-            const contrato = contratos.find(c => c._id === cId);
+            const contratoRef = o.contratoId || o.contrato;
+            const cId = typeof contratoRef === 'object' && contratoRef !== null ? (contratoRef._id || contratoRef.id) : contratoRef;
+            const contrato = contratos.find(c => c._id === cId || c.id === cId);
+            
+            let cCli = null;
+            let cPrest = null;
+
             if (contrato) {
-                const cCli = contrato.cliente || contrato.clienteId;
-                const cPrest = contrato.prestador || contrato.prestadorId;
-                o.solicitante = cCli?.razao_social || 'Desconhecido';
-                o.executor = cPrest?.nome || 'Desconhecido';
-            } else {
-                o.solicitante = 'Desconhecido';
-                o.executor = 'Desconhecido';
+                cCli = contrato.cliente || contrato.clienteId;
+                cPrest = contrato.prestador || contrato.prestadorId;
+            } else if (typeof contratoRef === 'object' && contratoRef !== null) {
+                cCli = contratoRef.cliente || contratoRef.clienteId;
+                cPrest = contratoRef.prestador || contratoRef.prestadorId;
             }
+
+            o.solicitante = typeof cCli === 'object' && cCli !== null ? (cCli.razao_social || cCli.nome || 'Desconhecido') : 'Desconhecido';
+            o.executor = typeof cPrest === 'object' && cPrest !== null ? (cPrest.nome || cPrest.razao_social || 'Desconhecido') : 'Desconhecido';
         });
         
         window.filteredDataList = [...window.currentDataList];
