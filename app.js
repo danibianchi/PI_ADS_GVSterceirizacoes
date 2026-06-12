@@ -321,7 +321,7 @@ async function renderRoute() {
                 await renderOrdens();
                 break;
             case 'agenda':
-                pageTitle.textContent = 'Agenda Geral (FullCalendar)';
+                pageTitle.textContent = 'Agenda Geral';
                 searchContainer.style.display = 'none';
                 if(btnExport) btnExport.style.display = 'none';
                 await renderAgenda();
@@ -344,17 +344,17 @@ async function renderRoute() {
 // ================= ORDENAÇÃO E PAGINAÇÃO =================
 
 window.sortData = function(field, type) {
-    if(sortField === field) sortAsc = !sortAsc;
-    else { sortField = field; sortAsc = true; }
+    if (sortField === field) {
+        sortAsc = !sortAsc;
+    } else {
+        sortField = field;
+        sortAsc = true;
+    }
     
     window.filteredDataList.sort((a, b) => {
-        let valA = a[field] || '';
-        let valB = b[field] || '';
-        if(field.includes('.')) {
-            const parts = field.split('.');
-            valA = a[parts[0]] ? a[parts[0]][parts[1]] : '';
-            valB = b[parts[0]] ? b[parts[0]][parts[1]] : '';
-        }
+        let valA = field.split('.').reduce((o, i) => o ? o[i] : '', a);
+        let valB = field.split('.').reduce((o, i) => o ? o[i] : '', b);
+        
         if (typeof valA === 'string') valA = valA.toLowerCase();
         if (typeof valB === 'string') valB = valB.toLowerCase();
         
@@ -362,9 +362,7 @@ window.sortData = function(field, type) {
         if (valA > valB) return sortAsc ? 1 : -1;
         return 0;
     });
-
-    window.currentPage = 1;
-
+    
     if(type === 'clientes') renderClientes(false);
     else if(type === 'prestadores') renderPrestadores(false);
     else if(type === 'contratos') renderContratos(false);
@@ -374,17 +372,41 @@ window.sortData = function(field, type) {
 }
 
 function getSortIcon(field) {
-    if(sortField !== field) return "<i class='bx bx-sort' style='color: var(--text-secondary); margin-left: 5px; opacity: 0.5;'></i>";
-    return sortAsc ? "<i class='bx bx-sort-a-z' style='color: var(--accent-color); margin-left: 5px;'></i>" : "<i class='bx bx-sort-z-a' style='color: var(--accent-color); margin-left: 5px;'></i>";
+    if (sortField !== field) return "<i class='bx bx-sort' style='color: var(--text-secondary); font-size: 12px;'></i>";
+    return sortAsc ? "<i class='bx bx-sort-up' style='color: var(--primary); font-size: 12px;'></i>" : "<i class='bx bx-sort-down' style='color: var(--primary); font-size: 12px;'></i>";
 }
 
-window.changePage = function(delta, type) {
+function getPaginationHtml(type) {
     const totalPages = Math.ceil(window.filteredDataList.length / window.itemsPerPage);
-    let newPage = window.currentPage + delta;
-    if(newPage < 1) newPage = 1;
-    if(newPage > totalPages) newPage = totalPages;
-    window.currentPage = newPage;
+    if(totalPages <= 1) return `<div class="pagination"><span style="color: var(--text-secondary); font-size: 14px;">Exibindo 1 a ${window.filteredDataList.length} de ${window.filteredDataList.length} registros</span></div>`;
     
+    const start = (window.currentPage - 1) * window.itemsPerPage + 1;
+    const end = Math.min(window.currentPage * window.itemsPerPage, window.filteredDataList.length);
+    
+    return `
+        <div class="pagination">
+            <span style="color: var(--text-secondary); font-size: 14px;">Exibindo ${start} a ${end} de ${window.filteredDataList.length} registros</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label style="color: var(--text-secondary); font-size: 14px;">Mostrar
+                    <select class="form-control" style="width: 70px; display: inline-block; padding: 4px; height: 30px;" onchange="changeItemsPerPage(this.value, '${type}')">
+                        <option value="5" ${window.itemsPerPage == 5 ? 'selected' : ''}>5</option>
+                        <option value="10" ${window.itemsPerPage == 10 ? 'selected' : ''}>10</option>
+                        <option value="20" ${window.itemsPerPage == 20 ? 'selected' : ''}>20</option>
+                        <option value="50" ${window.itemsPerPage == 50 ? 'selected' : ''}>50</option>
+                    </select>
+                </label>
+                <div class="pagination-controls">
+                    <button class="btn-icon" ${window.currentPage === 1 ? 'disabled style="opacity:0.5"' : ''} onclick="changePage(${window.currentPage - 1}, '${type}')"><i class='bx bx-chevron-left'></i></button>
+                    <span style="font-size: 14px; font-weight: 500;">Página ${window.currentPage} de ${totalPages}</span>
+                    <button class="btn-icon" ${window.currentPage === totalPages ? 'disabled style="opacity:0.5"' : ''} onclick="changePage(${window.currentPage + 1}, '${type}')"><i class='bx bx-chevron-right'></i></button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.changePage = function(page, type) {
+    window.currentPage = page;
     if(type === 'clientes') renderClientes(false);
     else if(type === 'prestadores') renderPrestadores(false);
     else if(type === 'contratos') renderContratos(false);
@@ -393,8 +415,8 @@ window.changePage = function(delta, type) {
     else if(type === 'usuarios') renderUsuarios(false);
 }
 
-window.changeItemsPerPage = function(el, type) {
-    window.itemsPerPage = parseInt(el.value);
+window.changeItemsPerPage = function(val, type) {
+    window.itemsPerPage = parseInt(val);
     window.currentPage = 1;
     if(type === 'clientes') renderClientes(false);
     else if(type === 'prestadores') renderPrestadores(false);
@@ -404,40 +426,7 @@ window.changeItemsPerPage = function(el, type) {
     else if(type === 'usuarios') renderUsuarios(false);
 }
 
-function getPaginationHtml(type) {
-    const totalItems = window.filteredDataList.length;
-    if (totalItems === 0) return '';
-    
-    const totalPages = Math.ceil(totalItems / window.itemsPerPage) || 1;
-    const startItem = ((window.currentPage - 1) * window.itemsPerPage) + 1;
-    const endItem = Math.min(window.currentPage * window.itemsPerPage, totalItems);
-
-    return `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; color: var(--text-secondary); font-size: 13px; flex-wrap: wrap; gap: 10px;">
-            <div>
-                Exibindo <strong>${startItem}</strong> a <strong>${endItem}</strong> de <strong>${totalItems}</strong> registros
-            </div>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    Mostrar
-                    <select onchange="changeItemsPerPage(this, '${type}')" class="pagination-select">
-                        <option value="5" ${window.itemsPerPage===5?'selected':''}>5</option>
-                        <option value="10" ${window.itemsPerPage===10?'selected':''}>10</option>
-                        <option value="25" ${window.itemsPerPage===25?'selected':''}>25</option>
-                        <option value="50" ${window.itemsPerPage===50?'selected':''}>50</option>
-                    </select>
-                </label>
-                <div style="display: flex; gap: 5px; align-items: center;">
-                    <button class="btn-icon" onclick="changePage(-1, '${type}')" ${window.currentPage === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><i class='bx bx-chevron-left'></i></button>
-                    <span style="display: flex; align-items: center; padding: 0 10px; font-weight: 500;">Página ${window.currentPage} de ${totalPages}</span>
-                    <button class="btn-icon" onclick="changePage(1, '${type}')" ${window.currentPage === totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><i class='bx bx-chevron-right'></i></button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// ================= FETCH DE DADOS E RENDERIZAÇÃO =================
+// ================= RENDERIZADORES DE TELAS =================
 
 async function renderDashboard() {
     const [resClientes, resPrest, resContr, resOrdens] = await Promise.all([
@@ -449,59 +438,78 @@ async function renderDashboard() {
     const contratos = await resContr.json();
     const ordens = await resOrdens.json();
 
-    contentArea.innerHTML = `
+    const ativos = contratos.filter(c => c.status === 'ativo').length;
+    const ordensPendentes = ordens.filter(o => o.status === 'pendente').length;
+
+    let html = `
         <div class="stats-grid">
             <div class="stat-card glass-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="navigateTo('clientes')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                <div class="stat-icon"><i class='bx bx-user'></i></div>
+                <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--primary);">
+                    <i class='bx bx-user'></i>
+                </div>
                 <div class="stat-info">
                     <h3>Clientes Cadastrados</h3>
-                    <p>${clientes.length || 0}</p>
+                    <p class="stat-value">${clientes.length}</p>
                 </div>
             </div>
             <div class="stat-card glass-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="navigateTo('prestadores')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                <div class="stat-icon"><i class='bx bx-briefcase'></i></div>
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">
+                    <i class='bx bx-briefcase'></i>
+                </div>
                 <div class="stat-info">
-                    <h3>Prestadores Disponíveis</h3>
-                    <p>${prestadores.filter(p => p.disponivel).length || 0}</p>
+                    <h3>Prestadores</h3>
+                    <p class="stat-value">${prestadores.length}</p>
                 </div>
             </div>
             <div class="stat-card glass-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="navigateTo('contratos')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                <div class="stat-icon"><i class='bx bx-file'></i></div>
+                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+                    <i class='bx bx-file'></i>
+                </div>
                 <div class="stat-info">
                     <h3>Contratos Ativos</h3>
-                    <p>${contratos.filter(c => c.status === 'ativo').length || 0}</p>
+                    <p class="stat-value">${ativos}</p>
+                </div>
+            </div>
+            <div class="stat-card glass-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="navigateTo('ordens')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">
+                    <i class='bx bx-task'></i>
+                </div>
+                <div class="stat-info">
+                    <h3>OS Pendentes</h3>
+                    <p class="stat-value">${ordensPendentes}</p>
                 </div>
             </div>
         </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
+        
+        <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
             <div class="glass-panel" style="padding: 20px;">
-                <h3 style="margin-bottom: 20px; font-size: 16px; text-align: center; color: var(--text-primary);">Status das Ordens de Serviço</h3>
-                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                <h3 style="margin-bottom: 20px; font-size: 16px; font-weight: 500;">Status das Ordens de Serviço</h3>
+                <div style="height: 300px;">
                     <canvas id="ordensChart"></canvas>
                 </div>
             </div>
             <div class="glass-panel" style="padding: 20px;">
-                <h3 style="margin-bottom: 20px; font-size: 16px; text-align: center; color: var(--text-primary);">Especialidades dos Prestadores</h3>
-                <div style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                <h3 style="margin-bottom: 20px; font-size: 16px; font-weight: 500;">Prestadores por Especialidade</h3>
+                <div style="height: 300px;">
                     <canvas id="prestadoresChart"></canvas>
                 </div>
             </div>
         </div>
     `;
 
+    contentArea.innerHTML = html;
+
     // Processar dados Ordens
-    const ordensPendentes = ordens.filter(o => o.status === 'pendente').length;
-    const ordensConcluidas = ordens.filter(o => o.status === 'concluida').length;
-    const ordensCanceladas = ordens.filter(o => o.status === 'cancelada').length;
+    const statusCounts = { pendente: 0, 'em andamento': 0, concluida: 0, cancelada: 0 };
+    ordens.forEach(o => { if(statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
 
     new Chart(document.getElementById('ordensChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Pendentes', 'Concluídas', 'Canceladas'],
+            labels: ['Pendente', 'Em Andamento', 'Concluída', 'Cancelada'],
             datasets: [{
-                data: [ordensPendentes, ordensConcluidas, ordensCanceladas],
-                backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+                data: [statusCounts.pendente, statusCounts['em andamento'], statusCounts.concluida, statusCounts.cancelada],
+                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#64748b'],
                 borderWidth: 0
             }]
         },
@@ -615,6 +623,12 @@ async function renderAgenda() {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,listWeek'
         },
+        buttonText: {
+            today: 'Hoje',
+            month: 'Mês',
+            week: 'Semana',
+            list: 'Lista'
+        },
         events: events,
         eventClick: function(info) {
             if (window.viewOrderDetails) {
@@ -639,7 +653,7 @@ async function renderClientes(fetchData = true) {
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="cursor: pointer;" onclick="sortData('razao_social', 'clientes')">Razão Social ${getSortIcon('razao_social')}</th>
+                    <th style="cursor: pointer; max-width: 200px;" onclick="sortData('razao_social', 'clientes')">Razão Social ${getSortIcon('razao_social')}</th>
                     <th style="cursor: pointer; width: 60px; text-align: center;" onclick="sortData('email', 'clientes')">Email ${getSortIcon('email')}</th>
                     <th style="cursor: pointer; width: 180px;" onclick="sortData('telefone', 'clientes')">Telefone ${getSortIcon('telefone')}</th>
                     <th style="cursor: pointer;" onclick="sortData('status', 'clientes')">Status ${getSortIcon('status')}</th>
@@ -660,7 +674,7 @@ async function renderClientes(fetchData = true) {
         const isAtivo = c.status === 'ativo';
         html += `
             <tr>
-                <td><strong>${c.razao_social}</strong></td>
+                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.razao_social}"><strong>${c.razao_social}</strong></td>
                 <td style="text-align: center;">
                     ${c.email ? `<a href="mailto:${c.email}" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(59,130,246,0.1); border-radius: 50%; transition: all 0.2s;" title="Enviar e-mail para ${c.email}" onmouseover="this.style.transform='scale(1.1)'; this.style.background='var(--primary)'; this.style.color='white';" onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--primary)';"><i class='bx bx-envelope' style="font-size: 18px;"></i></a>` : '-'}
                 </td>
