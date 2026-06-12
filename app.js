@@ -1579,11 +1579,13 @@ window.editRecord = async function(id, type) {
     } else if (type === 'usuarios') {
         openModal('Alterar Senha do Usuário', `
             <form id="form-novo" onsubmit="submitForm(event, 'usuarios', '${id}')">
-                <div class="form-group" style="text-align: left; margin-bottom: 5px; position: relative;">
+                <div class="form-group" style="text-align: left; margin-bottom: 5px;">
                     <label>Senha Segura (Mínimo 8 caracteres, 1 maiúscula, 1 número, 1 especial)</label>
-                    <input type="password" id="novo-user-pass-edit" name="pass" class="form-control" required style="padding-right: 40px;"
-                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}">
-                    <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('novo-user-pass-edit', this)"></i>
+                    <div style="position: relative;">
+                        <input type="password" id="novo-user-pass-edit" name="pass" class="form-control" required style="padding-right: 40px;"
+                               pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}">
+                        <i class='bx bx-hide' style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('novo-user-pass-edit', this)"></i>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Atualizar Senha</button>
             </form>
@@ -1704,11 +1706,13 @@ btnNovo.addEventListener('click', async () => {
                     <label>Nome de Usuário</label>
                     <input type="text" name="username" class="form-control" required>
                 </div>
-                <div class="form-group" style="position: relative;">
+                <div class="form-group">
                     <label>Senha Inicial (Mín. 8 caracteres, 1 Maiúscula, 1 Número, 1 Especial)</label>
-                    <input type="password" id="novo-user-pass" name="pass" class="form-control" required style="padding-right: 40px;"
-                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}">
-                    <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('novo-user-pass', this)"></i>
+                    <div style="position: relative;">
+                        <input type="password" id="novo-user-pass" name="pass" class="form-control" required style="padding-right: 40px;"
+                               pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}">
+                        <i class='bx bx-hide' style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('novo-user-pass', this)"></i>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Criar Usuário</button>
             </form>
@@ -1855,19 +1859,23 @@ window.openConfigModal = function() {
     document.getElementById('user-dropdown').classList.remove('active');
     openModal('Alterar Senha de Administrador', `
         <form id="form-change-pass">
-            <div class="form-group" style="text-align: left; position: relative;">
+            <div class="form-group" style="text-align: left;">
                 <label>Nova Senha</label>
-                <input type="password" id="cfg-new-pass" class="form-control" required style="padding-right: 40px;"
-                       pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
-                       title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
-                <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('cfg-new-pass', this)"></i>
+                <div style="position: relative;">
+                    <input type="password" id="cfg-new-pass" class="form-control" required style="padding-right: 40px;"
+                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
+                           title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                    <i class='bx bx-hide' style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('cfg-new-pass', this)"></i>
+                </div>
             </div>
-            <div class="form-group" style="text-align: left; margin-bottom: 5px; position: relative;">
+            <div class="form-group" style="text-align: left; margin-bottom: 5px;">
                 <label>Confirmar Nova Senha</label>
-                <input type="password" id="cfg-confirm-pass" class="form-control" required style="padding-right: 40px;"
-                       pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
-                       title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
-                <i class='bx bx-hide' style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('cfg-confirm-pass', this)"></i>
+                <div style="position: relative;">
+                    <input type="password" id="cfg-confirm-pass" class="form-control" required style="padding-right: 40px;"
+                           pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}"
+                           title="A senha deve ter no mínimo 8 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial">
+                    <i class='bx bx-hide' style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-secondary); font-size: 18px;" onclick="togglePwd('cfg-confirm-pass', this)"></i>
+                </div>
             </div>
             <div style="font-size: 11px; color: var(--text-secondary); text-align: left; margin-bottom: 15px;">
                 Requisitos: Mín. 8 caracteres, 1 Maiúscula, 1 Número, 1 Caractere Especial (!@#$)
